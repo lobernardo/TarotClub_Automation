@@ -33,7 +33,7 @@ export const mockLeads: Lead[] = [
     name: 'Carla Oliveira',
     email: 'carla@email.com',
     phone: '11977665544',
-    stage: 'checkout_started',
+    stage: 'payment_pending',
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     updated_at: new Date().toISOString(),
     last_interaction_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
@@ -72,26 +72,26 @@ export const mockLeads: Lead[] = [
     name: 'Fernanda Rocha',
     email: 'fernanda@email.com',
     phone: '11944332211',
-    stage: 'nurture',
+    stage: 'subscribed_past_due',
     created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
     updated_at: new Date().toISOString(),
     last_interaction_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     silenced_until: null,
     source: 'landing_page',
-    notes: null
+    notes: 'Pagamento atrasado há 5 dias'
   },
   {
     id: '7',
     name: 'Camila Dias',
     email: 'camila@email.com',
     phone: '11933221100',
-    stage: 'nurture',
+    stage: 'subscribed_canceled',
     created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
     updated_at: new Date().toISOString(),
     last_interaction_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     silenced_until: null,
     source: 'landing_page',
-    notes: 'Pediu para parar de receber ofertas'
+    notes: 'Cancelou por falta de tempo'
   },
   {
     id: '8',
@@ -144,6 +144,19 @@ export const mockLeads: Lead[] = [
     silenced_until: null,
     source: 'landing_page',
     notes: 'Pediu para não ser contatada'
+  },
+  {
+    id: '12',
+    name: 'Leticia Ferreira',
+    email: 'leticia@email.com',
+    phone: '11888776655',
+    stage: 'nurture',
+    created_at: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date().toISOString(),
+    last_interaction_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    silenced_until: null,
+    source: 'landing_page',
+    notes: 'Em nutrição de conteúdo'
   }
 ];
 
@@ -171,20 +184,27 @@ export const mockEvents: Event[] = [
   },
   {
     id: '4',
+    lead_id: '3',
+    type: 'payment_created',
+    payload: { amount: 97.00 },
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: '5',
     lead_id: '4',
     type: 'payment_confirmed',
     payload: { amount: 97.00 },
     created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
-    id: '5',
+    id: '6',
     lead_id: '4',
     type: 'welcome_sent',
     payload: null,
     created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000 + 60 * 1000).toISOString()
   },
   {
-    id: '6',
+    id: '7',
     lead_id: '4',
     type: 'group_invite_sent',
     payload: null,
@@ -238,7 +258,7 @@ export const dashboardMetrics = {
   appointmentsThisWeek: 3
 };
 
-// Leads grouped by stage for Kanban - using CORE_STAGES only
+// Leads grouped by stage for Kanban - using CORE_STAGES (all 9)
 export function getLeadsByStage(): Record<LeadStage, Lead[]> {
   return CORE_STAGES.reduce((acc, stage) => {
     acc[stage] = mockLeads.filter(lead => lead.stage === stage);

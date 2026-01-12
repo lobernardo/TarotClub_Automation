@@ -6,14 +6,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessageTemplate, CreateTemplateData, UpdateTemplateData } from '@/hooks/useMessageTemplates';
-import { ALLOWED_STAGES, STAGE_LABELS, CANONICAL_FOLLOWUPS, AllowedFollowUpStage, FollowUpRule } from '@/constants/followUpRules';
+import { ALLOWED_STAGES, STAGE_LABELS, CANONICAL_FOLLOWUPS, TemplateStage, FollowUpRule } from '@/constants/followUpRules';
 import { AlertCircle } from 'lucide-react';
 
 interface TemplateFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   template?: MessageTemplate | null;
-  availableDelays: (stage: AllowedFollowUpStage) => FollowUpRule[];
+  availableDelays: (stage: TemplateStage) => FollowUpRule[];
   onSubmit: (data: CreateTemplateData | UpdateTemplateData, id?: string) => boolean;
 }
 
@@ -27,7 +27,7 @@ export function TemplateFormDialog({
   const isEditing = !!template;
   
   const [content, setContent] = useState('');
-  const [stage, setStage] = useState<AllowedFollowUpStage | ''>('');
+  const [stage, setStage] = useState<TemplateStage | ''>('');
   const [delaySeconds, setDelaySeconds] = useState<number | ''>('');
   const [active, setActive] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -126,7 +126,7 @@ export function TemplateFormDialog({
             <Label htmlFor="stage">Estágio do Lead *</Label>
             <Select 
               value={stage} 
-              onValueChange={(value) => setStage(value as AllowedFollowUpStage)}
+              onValueChange={(value) => setStage(value as TemplateStage)}
               disabled={isEditing}
             >
               <SelectTrigger>

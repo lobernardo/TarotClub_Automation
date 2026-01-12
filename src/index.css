@@ -122,27 +122,33 @@
     @apply px-2.5 py-1 rounded-full text-xs font-medium;
   }
 
-  .stage-captured_form {
+  .stage-captured_form,
+  .stage-captured {
     @apply bg-[hsl(var(--stage-captured))/0.15] text-[hsl(var(--stage-captured))];
   }
 
-  .stage-checkout_started {
+  .stage-checkout_started,
+  .stage-checkout {
     @apply bg-[hsl(var(--stage-checkout))/0.15] text-[hsl(var(--stage-checkout))];
   }
 
-  .stage-payment_pending {
+  .stage-payment_pending,
+  .stage-pending {
     @apply bg-[hsl(var(--stage-pending))/0.15] text-[hsl(var(--stage-pending))];
   }
 
-  .stage-subscribed_active {
+  .stage-subscribed_active,
+  .stage-active {
     @apply bg-[hsl(var(--stage-active))/0.15] text-[hsl(var(--stage-active))];
   }
 
-  .stage-subscribed_past_due {
+  .stage-subscribed_past_due,
+  .stage-past-due {
     @apply bg-[hsl(var(--stage-past-due))/0.15] text-[hsl(var(--stage-past-due))];
   }
 
-  .stage-subscribed_canceled {
+  .stage-subscribed_canceled,
+  .stage-canceled {
     @apply bg-[hsl(var(--stage-canceled))/0.15] text-[hsl(var(--stage-canceled))];
   }
 

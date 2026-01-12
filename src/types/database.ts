@@ -1,19 +1,25 @@
 // Types matching existing Supabase schema
 
-// CORE STAGES - Single source of truth (PRD immutable)
+// LEAD STAGES - Single source of truth (PRD complete - 9 stages)
 export type LeadStage = 
   | 'captured_form'
   | 'checkout_started'
+  | 'payment_pending'
   | 'subscribed_active'
+  | 'subscribed_past_due'
+  | 'subscribed_canceled'
   | 'nurture'
   | 'lost'
   | 'blocked';
 
-// Core stages for Kanban display
+// All PRD stages for Kanban display (fixed order)
 export const CORE_STAGES: LeadStage[] = [
   'captured_form',
   'checkout_started',
+  'payment_pending',
   'subscribed_active',
+  'subscribed_past_due',
+  'subscribed_canceled',
   'nurture',
   'lost',
   'blocked'
@@ -102,24 +108,43 @@ export interface Subscription {
   canceled_at: string | null;
 }
 
-// Stage metadata for UI - CORE STAGES ONLY
+// Stage metadata for UI - ALL PRD STAGES
+// Color classes must match CSS classes in index.css (e.g., stage-captured_form)
 export const STAGE_CONFIG: Record<LeadStage, { label: string; color: string; description: string; isCore: boolean }> = {
   captured_form: {
     label: 'Lead Captado',
-    color: 'stage-captured',
+    color: 'stage-captured_form',
     description: 'Lead preencheu o formulário',
     isCore: true
   },
   checkout_started: {
     label: 'Checkout Iniciado',
-    color: 'stage-checkout',
+    color: 'stage-checkout_started',
     description: 'Iniciou o checkout',
+    isCore: true
+  },
+  payment_pending: {
+    label: 'Pagamento Pendente',
+    color: 'stage-payment_pending',
+    description: 'Pagamento criado, aguardando confirmação',
     isCore: true
   },
   subscribed_active: {
     label: 'Assinatura Ativa',
-    color: 'stage-active',
+    color: 'stage-subscribed_active',
     description: 'Assinatura ativa',
+    isCore: true
+  },
+  subscribed_past_due: {
+    label: 'Assinatura Atrasada',
+    color: 'stage-subscribed_past_due',
+    description: 'Pagamento atrasado',
+    isCore: true
+  },
+  subscribed_canceled: {
+    label: 'Assinatura Cancelada',
+    color: 'stage-subscribed_canceled',
+    description: 'Assinatura cancelada',
     isCore: true
   },
   nurture: {

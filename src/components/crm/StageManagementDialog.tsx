@@ -72,11 +72,14 @@ export function StageManagementDialog({ open, onOpenChange }: StageManagementDia
 function getStageColorClass(stage: LeadStage): string {
   const colorMap: Record<LeadStage, string> = {
     captured_form: 'bg-blue-500',
-    checkout_started: 'bg-amber-500',
+    checkout_started: 'bg-purple-500',
+    payment_pending: 'bg-amber-500',
     subscribed_active: 'bg-emerald-500',
-    nurture: 'bg-purple-500',
-    lost: 'bg-red-500',
-    blocked: 'bg-gray-500'
+    subscribed_past_due: 'bg-orange-500',
+    subscribed_canceled: 'bg-red-500',
+    nurture: 'bg-violet-500',
+    lost: 'bg-gray-500',
+    blocked: 'bg-gray-700'
   };
   return colorMap[stage] || 'bg-gray-500';
 }
