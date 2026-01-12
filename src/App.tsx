@@ -8,6 +8,7 @@ import CRM from "./pages/CRM";
 import Clients from "./pages/Clients";
 import Messages from "./pages/Messages";
 import Templates from "./pages/Templates";
+import Onboarding from "./pages/Onboarding";
 import Performance from "./pages/Performance";
 import Appointments from "./pages/Appointments";
 import Settings from "./pages/Settings";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/clients" element={<Clients />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/templates" element={<Templates />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/performance" element={<Performance />} />
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/settings" element={<Settings />} />

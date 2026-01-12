@@ -1,28 +1,48 @@
 // CANONICAL FOLLOW-UP RULES - IMMUTABLE
 // These rules are defined in the PRD and cannot be changed by the UI
 
-export type AllowedFollowUpStage = 'captured_form' | 'checkout_started' | 'subscribed_active' | 'nurture';
+// Stages allowed for SALES follow-ups only
+export type SalesFollowUpStage = 'captured_form' | 'checkout_started';
+
+// Stage for ONBOARDING only
+export type OnboardingStage = 'subscribed_active';
+
+// All stages that can have templates
+export type AllowedFollowUpStage = SalesFollowUpStage | OnboardingStage;
 
 export interface FollowUpRule {
   delay_seconds: number;
   label: string;
 }
 
-export const ALLOWED_STAGES: AllowedFollowUpStage[] = [
+// Sales stages for Templates page
+export const SALES_STAGES: SalesFollowUpStage[] = [
   'captured_form',
-  'checkout_started', 
-  'subscribed_active',
-  'nurture'
+  'checkout_started'
 ];
 
-export const STAGE_LABELS: Record<AllowedFollowUpStage, string> = {
+// Onboarding stage for Onboarding page
+export const ONBOARDING_STAGES: OnboardingStage[] = [
+  'subscribed_active'
+];
+
+export const SALES_STAGE_LABELS: Record<SalesFollowUpStage, string> = {
   captured_form: 'Lead Captado',
-  checkout_started: 'Checkout Iniciado',
-  subscribed_active: 'Assinatura Ativa (Onboarding)',
-  nurture: 'Nutrição'
+  checkout_started: 'Checkout Iniciado'
 };
 
-export const CANONICAL_FOLLOWUPS: Record<AllowedFollowUpStage, FollowUpRule[]> = {
+export const ONBOARDING_STAGE_LABELS: Record<OnboardingStage, string> = {
+  subscribed_active: 'Assinatura Ativa (Onboarding)'
+};
+
+// Combined labels for backward compatibility
+export const STAGE_LABELS: Record<AllowedFollowUpStage, string> = {
+  ...SALES_STAGE_LABELS,
+  ...ONBOARDING_STAGE_LABELS
+};
+
+// Canonical delays for SALES
+export const SALES_FOLLOWUPS: Record<SalesFollowUpStage, FollowUpRule[]> = {
   captured_form: [
     { delay_seconds: 172800, label: 'D+2' },
     { delay_seconds: 345600, label: 'D+4' },
@@ -35,17 +55,22 @@ export const CANONICAL_FOLLOWUPS: Record<AllowedFollowUpStage, FollowUpRule[]> =
     { delay_seconds: 345600, label: 'D+4' },
     { delay_seconds: 604800, label: 'D+7' },
     { delay_seconds: 1296000, label: 'D+15' }
-  ],
+  ]
+};
+
+// Canonical delays for ONBOARDING
+export const ONBOARDING_FOLLOWUPS: Record<OnboardingStage, FollowUpRule[]> = {
   subscribed_active: [
     { delay_seconds: 0, label: 'Imediato' },
     { delay_seconds: 60, label: '+1 minuto' },
     { delay_seconds: 300, label: '+5 minutos' }
-  ],
-  nurture: [
-    { delay_seconds: 604800, label: 'D+7' },
-    { delay_seconds: 1296000, label: 'D+15' },
-    { delay_seconds: 2592000, label: 'D+30' }
   ]
+};
+
+// Combined for backward compatibility
+export const CANONICAL_FOLLOWUPS: Record<AllowedFollowUpStage, FollowUpRule[]> = {
+  ...SALES_FOLLOWUPS,
+  ...ONBOARDING_FOLLOWUPS
 };
 
 // Business hours rule (informational only - no backend execution)
@@ -69,11 +94,19 @@ export function getDelayLabel(stage: AllowedFollowUpStage, delay_seconds: number
   return rule?.label || formatDelaySeconds(delay_seconds);
 }
 
-export function isValidFollowUp(stage: string, delay_seconds: number): boolean {
-  if (!ALLOWED_STAGES.includes(stage as AllowedFollowUpStage)) {
+export function isValidSalesFollowUp(stage: string, delay_seconds: number): boolean {
+  if (!SALES_STAGES.includes(stage as SalesFollowUpStage)) {
     return false;
   }
-  const rules = CANONICAL_FOLLOWUPS[stage as AllowedFollowUpStage];
+  const rules = SALES_FOLLOWUPS[stage as SalesFollowUpStage];
+  return rules.some(r => r.delay_seconds === delay_seconds);
+}
+
+export function isValidOnboardingFollowUp(stage: string, delay_seconds: number): boolean {
+  if (!ONBOARDING_STAGES.includes(stage as OnboardingStage)) {
+    return false;
+  }
+  const rules = ONBOARDING_FOLLOWUPS[stage as OnboardingStage];
   return rules.some(r => r.delay_seconds === delay_seconds);
 }
 

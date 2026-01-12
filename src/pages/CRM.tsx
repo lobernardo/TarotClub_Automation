@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { KanbanColumn } from '@/components/crm/KanbanColumn';
+import { StageManagementDialog } from '@/components/crm/StageManagementDialog';
 import { getLeadsByStage, mockLeads } from '@/data/mockData';
-import { Lead, LeadStage, STAGE_CONFIG } from '@/types/database';
-import { Search, Filter, SlidersHorizontal } from 'lucide-react';
+import { Lead, LeadStage, STAGE_CONFIG, CORE_STAGES } from '@/types/database';
+import { Search, Filter, Settings2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,19 +17,10 @@ import { StageBadge } from '@/components/ui/StageBadge';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-// Kanban visible stages (main funnel)
-const KANBAN_STAGES: LeadStage[] = [
-  'captured_form',
-  'checkout_started',
-  'payment_pending',
-  'subscribed_active',
-  'subscribed_past_due',
-  'nurture'
-];
-
 export default function CRM() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [stageDialogOpen, setStageDialogOpen] = useState(false);
   
   const leadsByStage = getLeadsByStage();
 
@@ -72,25 +64,36 @@ export default function CRM() {
             <Button variant="outline" size="icon" className="border-border">
               <Filter className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" className="border-border">
-              <SlidersHorizontal className="h-4 w-4" />
+            <Button 
+              variant="outline" 
+              className="border-border gap-2"
+              onClick={() => setStageDialogOpen(true)}
+            >
+              <Settings2 className="h-4 w-4" />
+              Gerenciar Etapas
             </Button>
           </div>
         </div>
 
-        {/* Kanban Board */}
+        {/* Kanban Board - Uses CORE_STAGES only */}
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-max">
-            {KANBAN_STAGES.map((stage) => (
+            {CORE_STAGES.map((stage) => (
               <KanbanColumn
                 key={stage}
                 stage={stage}
-                leads={filteredLeadsByStage[stage]}
+                leads={filteredLeadsByStage[stage] || []}
                 onLeadClick={setSelectedLead}
               />
             ))}
           </div>
         </div>
+
+        {/* Stage Management Dialog */}
+        <StageManagementDialog 
+          open={stageDialogOpen} 
+          onOpenChange={setStageDialogOpen}
+        />
 
         {/* Lead Detail Sheet */}
         <Sheet open={!!selectedLead} onOpenChange={() => setSelectedLead(null)}>

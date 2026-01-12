@@ -1,15 +1,23 @@
 // Types matching existing Supabase schema
 
+// CORE STAGES - Single source of truth (PRD immutable)
 export type LeadStage = 
   | 'captured_form'
   | 'checkout_started'
-  | 'payment_pending'
   | 'subscribed_active'
-  | 'subscribed_past_due'
-  | 'subscribed_canceled'
   | 'nurture'
   | 'lost'
   | 'blocked';
+
+// Core stages for Kanban display
+export const CORE_STAGES: LeadStage[] = [
+  'captured_form',
+  'checkout_started',
+  'subscribed_active',
+  'nurture',
+  'lost',
+  'blocked'
+];
 
 export type EventType =
   | 'form_submitted'
@@ -94,51 +102,42 @@ export interface Subscription {
   canceled_at: string | null;
 }
 
-// Stage metadata for UI
-export const STAGE_CONFIG: Record<LeadStage, { label: string; color: string; description: string }> = {
+// Stage metadata for UI - CORE STAGES ONLY
+export const STAGE_CONFIG: Record<LeadStage, { label: string; color: string; description: string; isCore: boolean }> = {
   captured_form: {
-    label: 'Captado',
+    label: 'Lead Captado',
     color: 'stage-captured',
-    description: 'Lead preencheu o formulário'
+    description: 'Lead preencheu o formulário',
+    isCore: true
   },
   checkout_started: {
-    label: 'Checkout',
+    label: 'Checkout Iniciado',
     color: 'stage-checkout',
-    description: 'Iniciou o checkout'
-  },
-  payment_pending: {
-    label: 'Aguardando',
-    color: 'stage-pending',
-    description: 'Pagamento pendente'
+    description: 'Iniciou o checkout',
+    isCore: true
   },
   subscribed_active: {
-    label: 'Ativo',
+    label: 'Assinatura Ativa',
     color: 'stage-active',
-    description: 'Assinatura ativa'
-  },
-  subscribed_past_due: {
-    label: 'Atrasado',
-    color: 'stage-past-due',
-    description: 'Pagamento em atraso'
-  },
-  subscribed_canceled: {
-    label: 'Cancelado',
-    color: 'stage-canceled',
-    description: 'Assinatura cancelada'
+    description: 'Assinatura ativa',
+    isCore: true
   },
   nurture: {
     label: 'Nutrição',
     color: 'stage-nurture',
-    description: 'Em nutrição de conteúdo'
+    description: 'Em nutrição de conteúdo',
+    isCore: true
   },
   lost: {
     label: 'Perdido',
     color: 'stage-lost',
-    description: 'Lead perdido'
+    description: 'Lead perdido',
+    isCore: true
   },
   blocked: {
     label: 'Bloqueado',
     color: 'stage-blocked',
-    description: 'Não contatar'
+    description: 'Não contatar',
+    isCore: true
   }
 };

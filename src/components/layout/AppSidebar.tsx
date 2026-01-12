@@ -9,16 +9,18 @@ import {
   Calendar,
   Settings,
   Sparkles,
-  LogOut
+  LogOut,
+  Heart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'CRM Kanban', href: '/crm', icon: Users },
-  { name: 'Clientes Ativos', href: '/clients', icon: UserCheck },
+  { name: 'Templates (Venda)', href: '/templates', icon: FileText },
+  { name: 'Onboarding', href: '/onboarding', icon: Heart },
   { name: 'Fila de Mensagens', href: '/messages', icon: MessageSquare },
-  { name: 'Templates', href: '/templates', icon: FileText },
+  { name: 'Clientes Ativos', href: '/clients', icon: UserCheck },
   { name: 'Performance', href: '/performance', icon: BarChart3 },
   { name: 'Agenda', href: '/appointments', icon: Calendar },
 ];
