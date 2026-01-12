@@ -1,4 +1,4 @@
-import { Edit2, Power, PowerOff, Users } from 'lucide-react';
+import { Edit2, Power, PowerOff, Users, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StageBadge } from '@/components/ui/StageBadge';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +12,10 @@ interface TemplateCardProps {
   template: MessageTemplate;
   onEdit: (template: MessageTemplate) => void;
   onToggleActive: (id: string, active: boolean) => void;
+  scheduledCount?: number; // Count from message_queue
 }
 
-export function TemplateCard({ template, onEdit, onToggleActive }: TemplateCardProps) {
+export function TemplateCard({ template, onEdit, onToggleActive, scheduledCount = 0 }: TemplateCardProps) {
   // Count eligible leads for this template
   const eligibleCount = countEligibleLeads(template, mockLeads);
 
@@ -86,19 +87,32 @@ export function TemplateCard({ template, onEdit, onToggleActive }: TemplateCardP
       <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
         <span>Variável: <code className="bg-muted px-1 rounded">{'{nome}'}</code></span>
         
-        {/* Eligible leads badge */}
-        <Badge 
-          variant="outline" 
-          className={cn(
-            "flex items-center gap-1.5",
-            eligibleCount > 0 
-              ? "bg-primary/10 text-primary border-primary/30" 
-              : "bg-muted/50 text-muted-foreground border-border"
+        <div className="flex items-center gap-2">
+          {/* Scheduled messages badge */}
+          {scheduledCount > 0 && (
+            <Badge 
+              variant="outline" 
+              className="flex items-center gap-1.5 bg-amber-500/10 text-amber-400 border-amber-500/30"
+            >
+              <Send className="h-3 w-3" />
+              {scheduledCount} agendada{scheduledCount !== 1 ? 's' : ''}
+            </Badge>
           )}
-        >
-          <Users className="h-3 w-3" />
-          {eligibleCount} lead{eligibleCount !== 1 ? 's' : ''} elegível{eligibleCount !== 1 ? 'eis' : ''}
-        </Badge>
+          
+          {/* Eligible leads badge */}
+          <Badge 
+            variant="outline" 
+            className={cn(
+              "flex items-center gap-1.5",
+              eligibleCount > 0 
+                ? "bg-primary/10 text-primary border-primary/30" 
+                : "bg-muted/50 text-muted-foreground border-border"
+            )}
+          >
+            <Users className="h-3 w-3" />
+            {eligibleCount} lead{eligibleCount !== 1 ? 's' : ''} elegível{eligibleCount !== 1 ? 'eis' : ''}
+          </Badge>
+        </div>
       </div>
     </div>
   );

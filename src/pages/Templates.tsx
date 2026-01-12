@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { FileText, Plus, Loader2, Clock, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMessageTemplates, MessageTemplate, CreateTemplateData, UpdateTemplateData } from '@/hooks/useMessageTemplates';
+import { useMessageQueue } from '@/hooks/useMessageQueue';
 import { TemplateCard } from '@/components/templates/TemplateCard';
 import { TemplateFormDialog } from '@/components/templates/TemplateFormDialog';
 import { SALES_STAGE_LABELS, SalesFollowUpStage, SALES_STAGES } from '@/constants/followUpRules';
@@ -16,6 +17,9 @@ export default function Templates() {
     toggleActive,
     getAvailableDelays 
   } = useMessageTemplates();
+
+  // Load message queue for scheduled counts
+  const { countScheduledForTemplate } = useMessageQueue();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
@@ -140,6 +144,7 @@ export default function Templates() {
                       template={template}
                       onEdit={handleEditTemplate}
                       onToggleActive={toggleActive}
+                      scheduledCount={countScheduledForTemplate(template.template_key)}
                     />
                   ))}
                 </div>
