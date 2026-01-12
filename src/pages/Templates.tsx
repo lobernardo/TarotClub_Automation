@@ -1,49 +1,52 @@
+import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { FileText, Plus, Edit2, Trash2 } from 'lucide-react';
+import { FileText, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { StageBadge } from '@/components/ui/StageBadge';
-import { LeadStage } from '@/types/database';
-
-// Mock templates data
-const mockTemplates = [
-  {
-    id: '1',
-    name: 'Boas-vindas D+2',
-    stage: 'captured_form' as LeadStage,
-    content: 'Oi {{nome}}! 🌙\n\nVi que você se interessou pelo Clube do Tarot da Veranah Alma...\n\nQuer saber mais sobre como funciona?',
-    delay: '2 dias após captação'
-  },
-  {
-    id: '2',
-    name: 'Checkout Abandonado 30min',
-    stage: 'checkout_started' as LeadStage,
-    content: 'Oi {{nome}}! ✨\n\nVi que você começou a se inscrever no Clube do Tarot mas não finalizou...\n\nPosso te ajudar com alguma dúvida?',
-    delay: '30 minutos após checkout'
-  },
-  {
-    id: '3',
-    name: 'Follow-up D+4',
-    stage: 'captured_form' as LeadStage,
-    content: 'Oi {{nome}}! 🔮\n\nAinda estou por aqui caso você tenha alguma pergunta sobre o Clube...',
-    delay: '4 dias após captação'
-  },
-  {
-    id: '4',
-    name: 'Onboarding - Boas-vindas',
-    stage: 'subscribed_active' as LeadStage,
-    content: 'Bem-vinda ao Clube do Tarot, {{nome}}! 🎉✨\n\nEstou muito feliz em ter você aqui...',
-    delay: 'Imediato após ativação'
-  },
-  {
-    id: '5',
-    name: 'Onboarding - Convite Grupo',
-    stage: 'subscribed_active' as LeadStage,
-    content: 'Aqui está seu convite para o grupo VIP do WhatsApp! 💫\n\n[LINK]\n\nLá você receberá todas as novidades...',
-    delay: '1 minuto após boas-vindas'
-  }
-];
+import { useMessageTemplates, MessageTemplate, CreateTemplateData, UpdateTemplateData } from '@/hooks/useMessageTemplates';
+import { TemplateCard } from '@/components/templates/TemplateCard';
+import { TemplateFormDialog } from '@/components/templates/TemplateFormDialog';
+import { STAGE_LABELS, AllowedFollowUpStage } from '@/constants/followUpRules';
 
 export default function Templates() {
+  const { 
+    templates, 
+    loading, 
+    createTemplate, 
+    updateTemplate, 
+    toggleActive,
+    getAvailableDelays 
+  } = useMessageTemplates();
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
+
+  const handleNewTemplate = () => {
+    setEditingTemplate(null);
+    setDialogOpen(true);
+  };
+
+  const handleEditTemplate = (template: MessageTemplate) => {
+    setEditingTemplate(template);
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = async (data: CreateTemplateData | UpdateTemplateData, id?: string): Promise<boolean> => {
+    if (id) {
+      return updateTemplate(id, data as UpdateTemplateData);
+    }
+    return createTemplate(data as CreateTemplateData);
+  };
+
+  // Group templates by stage
+  const templatesByStage = templates.reduce((acc, template) => {
+    const stage = template.stage as AllowedFollowUpStage;
+    if (!acc[stage]) {
+      acc[stage] = [];
+    }
+    acc[stage].push(template);
+    return acc;
+  }, {} as Record<AllowedFollowUpStage, MessageTemplate[]>);
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -58,51 +61,73 @@ export default function Templates() {
               Modelos de mensagens para follow-ups automáticos
             </p>
           </div>
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button 
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={handleNewTemplate}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Novo Template
           </Button>
         </div>
 
-        {/* Templates Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {mockTemplates.map((template) => (
-            <div
-              key={template.id}
-              className="glass-card rounded-xl p-5 hover:border-primary/30 transition-all"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-foreground">{template.name}</h3>
-                  <div className="flex items-center gap-2 mt-2">
-                    <StageBadge stage={template.stage} />
-                    <span className="text-xs text-muted-foreground">
-                      {template.delay}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+        {/* Loading state */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
 
-              <div className="bg-muted/50 rounded-lg p-4 border border-border">
-                <pre className="text-sm text-foreground/80 whitespace-pre-wrap font-sans">
-                  {template.content}
-                </pre>
-              </div>
+        {/* Empty state */}
+        {!loading && templates.length === 0 && (
+          <div className="text-center py-12 glass-card rounded-xl">
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              Nenhum template cadastrado
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              Crie seu primeiro template de mensagem para follow-ups automáticos
+            </p>
+            <Button onClick={handleNewTemplate}>
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Template
+            </Button>
+          </div>
+        )}
 
-              <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
-                <span>Variáveis: {'{{nome}}'}</span>
+        {/* Templates grouped by stage */}
+        {!loading && templates.length > 0 && (
+          <div className="space-y-8">
+            {(Object.keys(templatesByStage) as AllowedFollowUpStage[]).map((stage) => (
+              <div key={stage}>
+                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  {STAGE_LABELS[stage]}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    ({templatesByStage[stage].length} template{templatesByStage[stage].length !== 1 ? 's' : ''})
+                  </span>
+                </h2>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {templatesByStage[stage].map((template) => (
+                    <TemplateCard
+                      key={template.id}
+                      template={template}
+                      onEdit={handleEditTemplate}
+                      onToggleActive={toggleActive}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {/* Form Dialog */}
+        <TemplateFormDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          template={editingTemplate}
+          availableDelays={getAvailableDelays}
+          onSubmit={handleSubmit}
+        />
       </div>
     </AppLayout>
   );
