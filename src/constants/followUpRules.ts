@@ -1,19 +1,40 @@
 // CANONICAL FOLLOW-UP RULES - IMMUTABLE
 // These rules are defined in the PRD and cannot be changed by the UI
 
+// ============================================================
+// TEMPLATE STAGES - Restricted union for Templates module
+// Only these 4 stages can have templates
+// ============================================================
+export type TemplateStage = 
+  | 'captured_form' 
+  | 'checkout_started' 
+  | 'subscribed_active' 
+  | 'nurture';
+
 // Stages allowed for SALES follow-ups only
 export type SalesFollowUpStage = 'captured_form' | 'checkout_started';
 
 // Stage for ONBOARDING only
 export type OnboardingStage = 'subscribed_active';
 
-// All stages that can have templates
-export type AllowedFollowUpStage = SalesFollowUpStage | OnboardingStage;
+// Nurture stage
+export type NurtureStage = 'nurture';
+
+// All stages that can have templates (backward compatibility)
+export type AllowedFollowUpStage = TemplateStage;
 
 export interface FollowUpRule {
   delay_seconds: number;
   label: string;
 }
+
+// All allowed stages for Templates (dropdown)
+export const ALLOWED_STAGES: TemplateStage[] = [
+  'captured_form',
+  'checkout_started',
+  'subscribed_active',
+  'nurture'
+];
 
 // Sales stages for Templates page
 export const SALES_STAGES: SalesFollowUpStage[] = [
@@ -26,6 +47,14 @@ export const ONBOARDING_STAGES: OnboardingStage[] = [
   'subscribed_active'
 ];
 
+// Labels for all template stages
+export const STAGE_LABELS: Record<TemplateStage, string> = {
+  captured_form: 'Lead Captado',
+  checkout_started: 'Checkout Iniciado',
+  subscribed_active: 'Assinatura Ativa (Onboarding)',
+  nurture: 'Nutrição'
+};
+
 export const SALES_STAGE_LABELS: Record<SalesFollowUpStage, string> = {
   captured_form: 'Lead Captado',
   checkout_started: 'Checkout Iniciado'
@@ -33,12 +62,6 @@ export const SALES_STAGE_LABELS: Record<SalesFollowUpStage, string> = {
 
 export const ONBOARDING_STAGE_LABELS: Record<OnboardingStage, string> = {
   subscribed_active: 'Assinatura Ativa (Onboarding)'
-};
-
-// Combined labels for backward compatibility
-export const STAGE_LABELS: Record<AllowedFollowUpStage, string> = {
-  ...SALES_STAGE_LABELS,
-  ...ONBOARDING_STAGE_LABELS
 };
 
 // Canonical delays for SALES
@@ -67,10 +90,20 @@ export const ONBOARDING_FOLLOWUPS: Record<OnboardingStage, FollowUpRule[]> = {
   ]
 };
 
-// Combined for backward compatibility
-export const CANONICAL_FOLLOWUPS: Record<AllowedFollowUpStage, FollowUpRule[]> = {
+// Canonical delays for NURTURE
+export const NURTURE_FOLLOWUPS: Record<NurtureStage, FollowUpRule[]> = {
+  nurture: [
+    { delay_seconds: 604800, label: 'D+7' },
+    { delay_seconds: 1296000, label: 'D+15' },
+    { delay_seconds: 2592000, label: 'D+30' }
+  ]
+};
+
+// Combined for all template stages
+export const CANONICAL_FOLLOWUPS: Record<TemplateStage, FollowUpRule[]> = {
   ...SALES_FOLLOWUPS,
-  ...ONBOARDING_FOLLOWUPS
+  ...ONBOARDING_FOLLOWUPS,
+  ...NURTURE_FOLLOWUPS
 };
 
 // Business hours rule (informational only - no backend execution)
@@ -88,10 +121,19 @@ export function formatDelaySeconds(seconds: number): string {
   return `D+${Math.floor(seconds / 86400)}`;
 }
 
-export function getDelayLabel(stage: AllowedFollowUpStage, delay_seconds: number): string {
+export function getDelayLabel(stage: TemplateStage, delay_seconds: number): string {
   const rules = CANONICAL_FOLLOWUPS[stage];
   const rule = rules?.find(r => r.delay_seconds === delay_seconds);
   return rule?.label || formatDelaySeconds(delay_seconds);
+}
+
+// Validate if a stage + delay combination is valid for templates
+export function isValidFollowUp(stage: string, delay_seconds: number): boolean {
+  if (!ALLOWED_STAGES.includes(stage as TemplateStage)) {
+    return false;
+  }
+  const rules = CANONICAL_FOLLOWUPS[stage as TemplateStage];
+  return rules.some(r => r.delay_seconds === delay_seconds);
 }
 
 export function isValidSalesFollowUp(stage: string, delay_seconds: number): boolean {
@@ -111,7 +153,7 @@ export function isValidOnboardingFollowUp(stage: string, delay_seconds: number):
 }
 
 // Generate template_key slug from stage and delay
-export function generateTemplateKey(stage: AllowedFollowUpStage, delay_seconds: number): string {
+export function generateTemplateKey(stage: TemplateStage, delay_seconds: number): string {
   const label = getDelayLabel(stage, delay_seconds)
     .toLowerCase()
     .replace(/\+/g, '')

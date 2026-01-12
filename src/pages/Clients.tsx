@@ -6,21 +6,29 @@ import { Input } from '@/components/ui/input';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useState } from 'react';
+import { LeadStage } from '@/types/database';
 
 export default function Clients() {
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Filter only active subscribers
-  const activeClients = mockLeads.filter(lead => 
-    lead.stage === 'subscribed_active' || 
-    lead.stage === 'subscribed_past_due'
+  // Subscription-related stages
+  const subscriptionStages: LeadStage[] = ['subscribed_active', 'subscribed_past_due', 'subscribed_canceled'];
+  
+  // Filter only subscription clients
+  const subscriptionClients = mockLeads.filter(lead => 
+    subscriptionStages.includes(lead.stage)
   );
 
-  const filteredClients = activeClients.filter(client =>
+  const filteredClients = subscriptionClients.filter(client =>
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.phone.includes(searchQuery)
   );
+
+  // Count by status
+  const activeCount = subscriptionClients.filter(c => c.stage === 'subscribed_active').length;
+  const pastDueCount = subscriptionClients.filter(c => c.stage === 'subscribed_past_due').length;
+  const canceledCount = subscriptionClients.filter(c => c.stage === 'subscribed_canceled').length;
 
   return (
     <AppLayout>
@@ -30,10 +38,10 @@ export default function Clients() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <UserCheck className="h-8 w-8 text-primary" />
-              Clientes Ativos
+              Clientes
             </h1>
             <p className="text-muted-foreground mt-1">
-              {filteredClients.length} assinantes no Clube do Tarot
+              {activeCount} ativos • {pastDueCount} atrasados • {canceledCount} cancelados
             </p>
           </div>
 
@@ -111,7 +119,7 @@ export default function Clients() {
               Nenhum cliente encontrado
             </h3>
             <p className="text-muted-foreground">
-              {searchQuery ? 'Tente buscar por outro termo' : 'Os clientes ativos aparecerão aqui'}
+              {searchQuery ? 'Tente buscar por outro termo' : 'Os clientes aparecerão aqui'}
             </p>
           </div>
         )}

@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
-import { AllowedFollowUpStage, CANONICAL_FOLLOWUPS, isValidFollowUp, generateTemplateKey } from '@/constants/followUpRules';
+import { TemplateStage, CANONICAL_FOLLOWUPS, isValidFollowUp, generateTemplateKey } from '@/constants/followUpRules';
 import { toast } from 'sonner';
 
 export interface MessageTemplate {
   id: string;
   template_key: string; // immutable slug
   content: string;
-  stage: AllowedFollowUpStage;
+  stage: TemplateStage;
   delay_seconds: number;
   active: boolean;
   created_at: string;
@@ -15,7 +15,7 @@ export interface MessageTemplate {
 
 export interface CreateTemplateData {
   content: string;
-  stage: AllowedFollowUpStage;
+  stage: TemplateStage;
   delay_seconds: number;
   active: boolean;
 }
@@ -54,7 +54,7 @@ export function useMessageTemplates() {
   const [error] = useState<string | null>(null);
 
   // Check if a stage+delay combination already exists
-  const combinationExists = useCallback((stage: AllowedFollowUpStage, delay_seconds: number, excludeId?: string) => {
+  const combinationExists = useCallback((stage: TemplateStage, delay_seconds: number, excludeId?: string) => {
     return templates.some(t => 
       t.stage === stage && 
       t.delay_seconds === delay_seconds && 
@@ -63,7 +63,7 @@ export function useMessageTemplates() {
   }, [templates]);
 
   // Get available delay options for a stage (not yet used)
-  const getAvailableDelays = useCallback((stage: AllowedFollowUpStage) => {
+  const getAvailableDelays = useCallback((stage: TemplateStage) => {
     const allDelays = CANONICAL_FOLLOWUPS[stage] || [];
     return allDelays.filter(rule => 
       !templates.some(t => t.stage === stage && t.delay_seconds === rule.delay_seconds)

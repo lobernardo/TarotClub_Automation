@@ -1,9 +1,9 @@
 import { LeadStage, STAGE_CONFIG } from '@/types/database';
-import { STAGE_LABELS, AllowedFollowUpStage } from '@/constants/followUpRules';
+import { STAGE_LABELS, TemplateStage } from '@/constants/followUpRules';
 import { cn } from '@/lib/utils';
 
 interface StageBadgeProps {
-  stage: LeadStage | AllowedFollowUpStage;
+  stage: LeadStage | TemplateStage;
   className?: string;
   useTemplateLabels?: boolean;
 }
@@ -11,9 +11,9 @@ interface StageBadgeProps {
 export function StageBadge({ stage, className, useTemplateLabels = false }: StageBadgeProps) {
   const config = STAGE_CONFIG[stage as LeadStage];
   
-  // Use template labels if requested and stage is a follow-up stage
+  // Use template labels if requested and stage is a template stage
   const label = useTemplateLabels && (stage in STAGE_LABELS) 
-    ? STAGE_LABELS[stage as AllowedFollowUpStage]
+    ? STAGE_LABELS[stage as TemplateStage]
     : config?.label || stage;
   
   return (
