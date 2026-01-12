@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { dashboardMetrics, mockLeads, mockEvents } from '@/data/mockData';
 import { STAGE_CONFIG, LeadStage } from '@/types/database';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Users,
   UserCheck,
@@ -16,6 +18,21 @@ import { ptBR } from 'date-fns/locale';
 import { StageBadge } from '@/components/ui/StageBadge';
 
 export default function Dashboard() {
+  const [totalLeads, setTotalLeads] = useState<number>(0);
+
+  useEffect(() => {
+    async function fetchTotalLeads() {
+      const { count, error } = await supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true });
+      
+      if (!error && count !== null) {
+        setTotalLeads(count);
+      }
+    }
+    fetchTotalLeads();
+  }, []);
+
   // Recent leads
   const recentLeads = [...mockLeads]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -49,7 +66,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           <MetricCard
             title="Total de Leads"
-            value={dashboardMetrics.totalLeads}
+            value={totalLeads}
             change={12}
             changeLabel="vs mês anterior"
             icon={<Users className="h-6 w-6 text-primary" />}
