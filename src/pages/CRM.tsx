@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { KanbanColumn } from '@/components/crm/KanbanColumn';
 import { StageManagementDialog } from '@/components/crm/StageManagementDialog';
 import { LeadPredictedFollows } from '@/components/crm/LeadPredictedFollows';
+import { LeadMessageQueue } from '@/components/crm/LeadMessageQueue';
 import { getLeadsByStage, mockLeads } from '@/data/mockData';
 import { Lead, LeadStage, STAGE_CONFIG, CORE_STAGES } from '@/types/database';
 import { Search, Filter, Settings2 } from 'lucide-react';
@@ -19,6 +20,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useMessageTemplates } from '@/hooks/useMessageTemplates';
 import { useOnboardingTemplates } from '@/hooks/useOnboardingTemplates';
+import { useMessageQueue } from '@/hooks/useMessageQueue';
 
 export default function CRM() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,6 +31,9 @@ export default function CRM() {
   const { templates: messageTemplates } = useMessageTemplates();
   const { templates: onboardingTemplates } = useOnboardingTemplates();
   const allTemplates = [...messageTemplates, ...onboardingTemplates];
+  
+  // Load message queue
+  const { queueItems, loading: queueLoading } = useMessageQueue();
   
   const leadsByStage = getLeadsByStage();
 
@@ -181,6 +186,13 @@ export default function CRM() {
                       <p className="text-foreground">{selectedLead.notes}</p>
                     </div>
                   )}
+
+                  {/* Message Queue (Real) */}
+                  <LeadMessageQueue 
+                    lead={selectedLead}
+                    queueItems={queueItems}
+                    loading={queueLoading}
+                  />
 
                   {/* Predicted Follows (Simulation) */}
                   <LeadPredictedFollows 

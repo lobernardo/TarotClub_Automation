@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Edit, Clock, Key, Users } from 'lucide-react';
+import { Edit, Clock, Key, Users, Send } from 'lucide-react';
 import { OnboardingTemplate } from '@/hooks/useOnboardingTemplates';
 import { getDelayLabel, ONBOARDING_STAGE_LABELS } from '@/constants/followUpRules';
 import { countEligibleLeads } from '@/lib/dispatcher';
@@ -13,9 +13,10 @@ interface OnboardingTemplateCardProps {
   template: OnboardingTemplate;
   onEdit: (template: OnboardingTemplate) => void;
   onToggleActive: (id: string) => void;
+  scheduledCount?: number; // Count from message_queue
 }
 
-export function OnboardingTemplateCard({ template, onEdit, onToggleActive }: OnboardingTemplateCardProps) {
+export function OnboardingTemplateCard({ template, onEdit, onToggleActive, scheduledCount = 0 }: OnboardingTemplateCardProps) {
   const delayLabel = getDelayLabel(template.stage, template.delay_seconds);
   const stageLabel = ONBOARDING_STAGE_LABELS[template.stage];
   
@@ -68,19 +69,32 @@ export function OnboardingTemplateCard({ template, onEdit, onToggleActive }: Onb
             {template.active ? 'Ativo' : 'Inativo'}
           </span>
           
-          {/* Eligible leads badge */}
-          <Badge 
-            variant="outline" 
-            className={cn(
-              "flex items-center gap-1.5 text-xs",
-              eligibleCount > 0 
-                ? "bg-primary/10 text-primary border-primary/30" 
-                : "bg-muted/50 text-muted-foreground border-border"
+          <div className="flex items-center gap-2">
+            {/* Scheduled messages badge */}
+            {scheduledCount > 0 && (
+              <Badge 
+                variant="outline" 
+                className="flex items-center gap-1.5 text-xs bg-amber-500/10 text-amber-400 border-amber-500/30"
+              >
+                <Send className="h-3 w-3" />
+                {scheduledCount} agendada{scheduledCount !== 1 ? 's' : ''}
+              </Badge>
             )}
-          >
-            <Users className="h-3 w-3" />
-            {eligibleCount} lead{eligibleCount !== 1 ? 's' : ''} elegível{eligibleCount !== 1 ? 'eis' : ''}
-          </Badge>
+            
+            {/* Eligible leads badge */}
+            <Badge 
+              variant="outline" 
+              className={cn(
+                "flex items-center gap-1.5 text-xs",
+                eligibleCount > 0 
+                  ? "bg-primary/10 text-primary border-primary/30" 
+                  : "bg-muted/50 text-muted-foreground border-border"
+              )}
+            >
+              <Users className="h-3 w-3" />
+              {eligibleCount} lead{eligibleCount !== 1 ? 's' : ''} elegível{eligibleCount !== 1 ? 'eis' : ''}
+            </Badge>
+          </div>
         </div>
       </CardContent>
     </Card>

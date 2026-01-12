@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { UserCheck, Plus, Loader2, Clock, Info, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOnboardingTemplates, OnboardingTemplate, CreateOnboardingTemplateData, UpdateOnboardingTemplateData } from '@/hooks/useOnboardingTemplates';
+import { useMessageQueue } from '@/hooks/useMessageQueue';
 import { OnboardingTemplateCard } from '@/components/onboarding/OnboardingTemplateCard';
 import { OnboardingFormDialog } from '@/components/onboarding/OnboardingFormDialog';
 
@@ -15,6 +16,9 @@ export default function Onboarding() {
     toggleActive,
     getAvailableDelays 
   } = useOnboardingTemplates();
+
+  // Load message queue for scheduled counts
+  const { countScheduledForTemplate } = useMessageQueue();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<OnboardingTemplate | null>(null);
@@ -141,6 +145,7 @@ export default function Onboarding() {
                   template={template}
                   onEdit={handleEditTemplate}
                   onToggleActive={toggleActive}
+                  scheduledCount={countScheduledForTemplate(template.template_key)}
                 />
               ))}
             </div>
