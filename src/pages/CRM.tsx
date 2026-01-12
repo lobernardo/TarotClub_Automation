@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { KanbanColumn } from '@/components/crm/KanbanColumn';
 import { StageManagementDialog } from '@/components/crm/StageManagementDialog';
+import { LeadPredictedFollows } from '@/components/crm/LeadPredictedFollows';
 import { getLeadsByStage, mockLeads } from '@/data/mockData';
 import { Lead, LeadStage, STAGE_CONFIG, CORE_STAGES } from '@/types/database';
 import { Search, Filter, Settings2 } from 'lucide-react';
@@ -16,11 +17,18 @@ import {
 import { StageBadge } from '@/components/ui/StageBadge';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useMessageTemplates } from '@/hooks/useMessageTemplates';
+import { useOnboardingTemplates } from '@/hooks/useOnboardingTemplates';
 
 export default function CRM() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [stageDialogOpen, setStageDialogOpen] = useState(false);
+  
+  // Load templates for preview
+  const { templates: messageTemplates } = useMessageTemplates();
+  const { templates: onboardingTemplates } = useOnboardingTemplates();
+  const allTemplates = [...messageTemplates, ...onboardingTemplates];
   
   const leadsByStage = getLeadsByStage();
 
@@ -173,6 +181,12 @@ export default function CRM() {
                       <p className="text-foreground">{selectedLead.notes}</p>
                     </div>
                   )}
+
+                  {/* Predicted Follows (Simulation) */}
+                  <LeadPredictedFollows 
+                    lead={selectedLead} 
+                    templates={allTemplates} 
+                  />
 
                   {/* Actions */}
                   <div className="flex gap-3 pt-4">

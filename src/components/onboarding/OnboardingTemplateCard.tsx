@@ -2,9 +2,12 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Edit, Clock, Key } from 'lucide-react';
+import { Edit, Clock, Key, Users } from 'lucide-react';
 import { OnboardingTemplate } from '@/hooks/useOnboardingTemplates';
 import { getDelayLabel, ONBOARDING_STAGE_LABELS } from '@/constants/followUpRules';
+import { countEligibleLeads } from '@/lib/dispatcher';
+import { mockLeads } from '@/data/mockData';
+import { cn } from '@/lib/utils';
 
 interface OnboardingTemplateCardProps {
   template: OnboardingTemplate;
@@ -15,6 +18,9 @@ interface OnboardingTemplateCardProps {
 export function OnboardingTemplateCard({ template, onEdit, onToggleActive }: OnboardingTemplateCardProps) {
   const delayLabel = getDelayLabel(template.stage, template.delay_seconds);
   const stageLabel = ONBOARDING_STAGE_LABELS[template.stage];
+  
+  // Count eligible leads for this template
+  const eligibleCount = countEligibleLeads(template, mockLeads);
 
   return (
     <Card className="glass-card border-border hover:border-primary/30 transition-colors">
@@ -56,11 +62,25 @@ export function OnboardingTemplateCard({ template, onEdit, onToggleActive }: Onb
         <p className="text-sm text-foreground line-clamp-3 whitespace-pre-wrap">
           {template.content}
         </p>
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex items-center justify-between">
           <span className={`inline-flex items-center gap-1.5 text-xs ${template.active ? 'text-emerald-400' : 'text-muted-foreground'}`}>
             <span className={`w-2 h-2 rounded-full ${template.active ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
             {template.active ? 'Ativo' : 'Inativo'}
           </span>
+          
+          {/* Eligible leads badge */}
+          <Badge 
+            variant="outline" 
+            className={cn(
+              "flex items-center gap-1.5 text-xs",
+              eligibleCount > 0 
+                ? "bg-primary/10 text-primary border-primary/30" 
+                : "bg-muted/50 text-muted-foreground border-border"
+            )}
+          >
+            <Users className="h-3 w-3" />
+            {eligibleCount} lead{eligibleCount !== 1 ? 's' : ''} elegível{eligibleCount !== 1 ? 'eis' : ''}
+          </Badge>
         </div>
       </CardContent>
     </Card>

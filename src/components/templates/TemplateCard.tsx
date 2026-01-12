@@ -1,8 +1,11 @@
-import { Edit2, Power, PowerOff } from 'lucide-react';
+import { Edit2, Power, PowerOff, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StageBadge } from '@/components/ui/StageBadge';
+import { Badge } from '@/components/ui/badge';
 import { MessageTemplate } from '@/hooks/useMessageTemplates';
 import { getDelayLabel, AllowedFollowUpStage } from '@/constants/followUpRules';
+import { countEligibleLeads } from '@/lib/dispatcher';
+import { mockLeads } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
 interface TemplateCardProps {
@@ -12,6 +15,9 @@ interface TemplateCardProps {
 }
 
 export function TemplateCard({ template, onEdit, onToggleActive }: TemplateCardProps) {
+  // Count eligible leads for this template
+  const eligibleCount = countEligibleLeads(template, mockLeads);
+
   return (
     <div
       className={cn(
@@ -77,8 +83,22 @@ export function TemplateCard({ template, onEdit, onToggleActive }: TemplateCardP
         </pre>
       </div>
 
-      <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
         <span>Variável: <code className="bg-muted px-1 rounded">{'{nome}'}</code></span>
+        
+        {/* Eligible leads badge */}
+        <Badge 
+          variant="outline" 
+          className={cn(
+            "flex items-center gap-1.5",
+            eligibleCount > 0 
+              ? "bg-primary/10 text-primary border-primary/30" 
+              : "bg-muted/50 text-muted-foreground border-border"
+          )}
+        >
+          <Users className="h-3 w-3" />
+          {eligibleCount} lead{eligibleCount !== 1 ? 's' : ''} elegível{eligibleCount !== 1 ? 'eis' : ''}
+        </Badge>
       </div>
     </div>
   );
