@@ -19,18 +19,30 @@ import { StageBadge } from '@/components/ui/StageBadge';
 
 export default function Dashboard() {
   const [totalLeads, setTotalLeads] = useState<number>(0);
+  const [activeClients, setActiveClients] = useState<number>(0);
 
   useEffect(() => {
-    async function fetchTotalLeads() {
-      const { count, error } = await supabase
+    async function fetchMetrics() {
+      // Total leads
+      const { count: totalCount } = await supabase
         .from('leads')
         .select('*', { count: 'exact', head: true });
       
-      if (!error && count !== null) {
-        setTotalLeads(count);
+      if (totalCount !== null) {
+        setTotalLeads(totalCount);
+      }
+
+      // Active clients (stage = subscribed_active)
+      const { count: activeCount } = await supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('stage', 'subscribed_active');
+      
+      if (activeCount !== null) {
+        setActiveClients(activeCount);
       }
     }
-    fetchTotalLeads();
+    fetchMetrics();
   }, []);
 
   // Recent leads
@@ -73,7 +85,7 @@ export default function Dashboard() {
           />
           <MetricCard
             title="Clientes Ativos"
-            value={dashboardMetrics.activeClients}
+            value={activeClients}
             change={8}
             changeLabel="vs mês anterior"
             icon={<UserCheck className="h-6 w-6 text-primary" />}
