@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { FileText, Plus, Loader2, Clock, Info } from 'lucide-react';
+import { UserCheck, Plus, Loader2, Clock, Info, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useMessageTemplates, MessageTemplate, CreateTemplateData, UpdateTemplateData } from '@/hooks/useMessageTemplates';
-import { TemplateCard } from '@/components/templates/TemplateCard';
-import { TemplateFormDialog } from '@/components/templates/TemplateFormDialog';
-import { SALES_STAGE_LABELS, SalesFollowUpStage, SALES_STAGES } from '@/constants/followUpRules';
+import { useOnboardingTemplates, OnboardingTemplate, CreateOnboardingTemplateData, UpdateOnboardingTemplateData } from '@/hooks/useOnboardingTemplates';
+import { OnboardingTemplateCard } from '@/components/onboarding/OnboardingTemplateCard';
+import { OnboardingFormDialog } from '@/components/onboarding/OnboardingFormDialog';
 
-export default function Templates() {
+export default function Onboarding() {
   const { 
     templates, 
     loading, 
@@ -15,37 +14,27 @@ export default function Templates() {
     updateTemplate, 
     toggleActive,
     getAvailableDelays 
-  } = useMessageTemplates();
+  } = useOnboardingTemplates();
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<OnboardingTemplate | null>(null);
 
   const handleNewTemplate = () => {
     setEditingTemplate(null);
     setDialogOpen(true);
   };
 
-  const handleEditTemplate = (template: MessageTemplate) => {
+  const handleEditTemplate = (template: OnboardingTemplate) => {
     setEditingTemplate(template);
     setDialogOpen(true);
   };
 
-  const handleSubmit = (data: CreateTemplateData | UpdateTemplateData, id?: string): boolean => {
+  const handleSubmit = (data: CreateOnboardingTemplateData | UpdateOnboardingTemplateData, id?: string): boolean => {
     if (id) {
-      return updateTemplate(id, data as UpdateTemplateData);
+      return updateTemplate(id, data as UpdateOnboardingTemplateData);
     }
-    return createTemplate(data as CreateTemplateData);
+    return createTemplate(data as CreateOnboardingTemplateData);
   };
-
-  // Group templates by stage
-  const templatesByStage = templates.reduce((acc, template) => {
-    const stage = template.stage as SalesFollowUpStage;
-    if (!acc[stage]) {
-      acc[stage] = [];
-    }
-    acc[stage].push(template);
-    return acc;
-  }, {} as Record<SalesFollowUpStage, MessageTemplate[]>);
 
   return (
     <AppLayout>
@@ -54,11 +43,11 @@ export default function Templates() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <FileText className="h-8 w-8 text-primary" />
-              Templates de Follow-up (Venda)
+              <UserCheck className="h-8 w-8 text-primary" />
+              Clientes Ativos / Onboarding
             </h1>
             <p className="text-muted-foreground mt-1">
-              Modelos de mensagens para follow-ups de leads captados e checkout
+              Mensagens de boas-vindas e onboarding para novos assinantes
             </p>
           </div>
           <Button 
@@ -68,6 +57,20 @@ export default function Templates() {
             <Plus className="h-4 w-4 mr-2" />
             Novo Template
           </Button>
+        </div>
+
+        {/* Important Notice */}
+        <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+          <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              Mensagens de onboarding não são follow-ups de venda.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Este módulo é exclusivo para comunicação institucional com clientes ativos: 
+              boas-vindas, link do grupo VIP e mensagens de orientação.
+            </p>
+          </div>
         </div>
 
         {/* Business Hours Info Banner */}
@@ -93,7 +96,7 @@ export default function Templates() {
               Variável Disponível
             </p>
             <p className="text-sm text-muted-foreground">
-              Use <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">{'{nome}'}</code> no conteúdo para inserir o nome do lead automaticamente.
+              Use <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">{'{nome}'}</code> no conteúdo para inserir o nome do cliente automaticamente.
             </p>
           </div>
         </div>
@@ -108,12 +111,12 @@ export default function Templates() {
         {/* Empty state */}
         {!loading && templates.length === 0 && (
           <div className="text-center py-12 glass-card rounded-xl">
-            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <UserCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">
-              Nenhum template de venda cadastrado
+              Nenhum template de onboarding cadastrado
             </h3>
             <p className="text-muted-foreground mb-4">
-              Crie templates para follow-ups de leads captados e checkout abandonado
+              Crie templates de boas-vindas e orientações para novos assinantes
             </p>
             <Button onClick={handleNewTemplate}>
               <Plus className="h-4 w-4 mr-2" />
@@ -122,34 +125,30 @@ export default function Templates() {
           </div>
         )}
 
-        {/* Templates grouped by stage */}
+        {/* Templates list */}
         {!loading && templates.length > 0 && (
-          <div className="space-y-8">
-            {SALES_STAGES.filter(stage => templatesByStage[stage]?.length > 0).map((stage) => (
-              <div key={stage}>
-                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                  {SALES_STAGE_LABELS[stage]}
-                  <span className="text-sm font-normal text-muted-foreground">
-                    ({templatesByStage[stage].length} template{templatesByStage[stage].length !== 1 ? 's' : ''})
-                  </span>
-                </h2>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {templatesByStage[stage].map((template) => (
-                    <TemplateCard
-                      key={template.id}
-                      template={template}
-                      onEdit={handleEditTemplate}
-                      onToggleActive={toggleActive}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              Templates de Onboarding
+              <span className="text-sm font-normal text-muted-foreground">
+                ({templates.length} template{templates.length !== 1 ? 's' : ''})
+              </span>
+            </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {templates.map((template) => (
+                <OnboardingTemplateCard
+                  key={template.id}
+                  template={template}
+                  onEdit={handleEditTemplate}
+                  onToggleActive={toggleActive}
+                />
+              ))}
+            </div>
           </div>
         )}
 
         {/* Form Dialog */}
-        <TemplateFormDialog
+        <OnboardingFormDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           template={editingTemplate}
