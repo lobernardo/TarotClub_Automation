@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { AllowedFollowUpStage, CANONICAL_FOLLOWUPS, isValidFollowUp } from '@/constants/followUpRules';
+import { useState, useCallback } from 'react';
+import { AllowedFollowUpStage, CANONICAL_FOLLOWUPS, isValidFollowUp, generateTemplateKey } from '@/constants/followUpRules';
 import { toast } from 'sonner';
 
 export interface MessageTemplate {
   id: string;
-  name: string;
+  template_key: string; // immutable slug
   content: string;
   stage: AllowedFollowUpStage;
   delay_seconds: number;
@@ -15,7 +14,6 @@ export interface MessageTemplate {
 }
 
 export interface CreateTemplateData {
-  name: string;
   content: string;
   stage: AllowedFollowUpStage;
   delay_seconds: number;
@@ -23,39 +21,37 @@ export interface CreateTemplateData {
 }
 
 export interface UpdateTemplateData {
-  name: string;
   content: string;
   active: boolean;
 }
 
+// Local storage key for templates
+const STORAGE_KEY = 'message_templates';
+
+// Generate unique ID
+function generateId(): string {
+  return `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Load templates from localStorage
+function loadTemplates(): MessageTemplate[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+// Save templates to localStorage
+function saveTemplates(templates: MessageTemplate[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
+}
+
 export function useMessageTemplates() {
-  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchTemplates = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
-    const { data, error: fetchError } = await supabase
-      .from('message_templates')
-      .select('*')
-      .order('stage', { ascending: true })
-      .order('delay_seconds', { ascending: true });
-
-    if (fetchError) {
-      setError(fetchError.message);
-      toast.error('Erro ao carregar templates');
-    } else {
-      setTemplates(data || []);
-    }
-    
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchTemplates();
-  }, [fetchTemplates]);
+  const [templates, setTemplates] = useState<MessageTemplate[]>(() => loadTemplates());
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
 
   // Check if a stage+delay combination already exists
   const combinationExists = useCallback((stage: AllowedFollowUpStage, delay_seconds: number, excludeId?: string) => {
@@ -75,7 +71,13 @@ export function useMessageTemplates() {
   }, [templates]);
 
   // Create a new template
-  const createTemplate = useCallback(async (data: CreateTemplateData): Promise<boolean> => {
+  const createTemplate = useCallback((data: CreateTemplateData): boolean => {
+    // Validate content
+    if (!data.content.trim()) {
+      toast.error('O conteúdo da mensagem é obrigatório');
+      return false;
+    }
+
     // Validate the follow-up rule
     if (!isValidFollowUp(data.stage, data.delay_seconds)) {
       toast.error('Combinação de estágio e tempo inválida');
@@ -88,73 +90,93 @@ export function useMessageTemplates() {
       return false;
     }
 
-    const { error: insertError } = await supabase
-      .from('message_templates')
-      .insert({
-        name: data.name,
-        content: data.content,
-        stage: data.stage,
-        delay_seconds: data.delay_seconds,
-        active: data.active
-      });
-
-    if (insertError) {
-      toast.error('Erro ao criar template: ' + insertError.message);
+    const template_key = generateTemplateKey(data.stage, data.delay_seconds);
+    
+    // Double-check template_key uniqueness
+    if (templates.some(t => t.template_key === template_key)) {
+      toast.error('Template key já existe');
       return false;
     }
 
+    const now = new Date().toISOString();
+    const newTemplate: MessageTemplate = {
+      id: generateId(),
+      template_key,
+      content: data.content.trim(),
+      stage: data.stage,
+      delay_seconds: data.delay_seconds,
+      active: data.active,
+      created_at: now,
+      updated_at: now
+    };
+
+    const updatedTemplates = [...templates, newTemplate].sort((a, b) => {
+      if (a.stage !== b.stage) return a.stage.localeCompare(b.stage);
+      return a.delay_seconds - b.delay_seconds;
+    });
+
+    setTemplates(updatedTemplates);
+    saveTemplates(updatedTemplates);
+    
     toast.success('Template criado com sucesso');
-    await fetchTemplates();
     return true;
-  }, [combinationExists, fetchTemplates]);
+  }, [templates, combinationExists]);
 
-  // Update an existing template (only name, content, active)
-  const updateTemplate = useCallback(async (id: string, data: UpdateTemplateData): Promise<boolean> => {
-    const { error: updateError } = await supabase
-      .from('message_templates')
-      .update({
-        name: data.name,
-        content: data.content,
-        active: data.active,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id);
-
-    if (updateError) {
-      toast.error('Erro ao atualizar template: ' + updateError.message);
+  // Update an existing template (only content, active)
+  const updateTemplate = useCallback((id: string, data: UpdateTemplateData): boolean => {
+    // Validate content
+    if (!data.content.trim()) {
+      toast.error('O conteúdo da mensagem é obrigatório');
       return false;
     }
 
+    const templateIndex = templates.findIndex(t => t.id === id);
+    if (templateIndex === -1) {
+      toast.error('Template não encontrado');
+      return false;
+    }
+
+    const updatedTemplates = [...templates];
+    updatedTemplates[templateIndex] = {
+      ...updatedTemplates[templateIndex],
+      content: data.content.trim(),
+      active: data.active,
+      updated_at: new Date().toISOString()
+    };
+
+    setTemplates(updatedTemplates);
+    saveTemplates(updatedTemplates);
+    
     toast.success('Template atualizado com sucesso');
-    await fetchTemplates();
     return true;
-  }, [fetchTemplates]);
+  }, [templates]);
 
   // Toggle active status
-  const toggleActive = useCallback(async (id: string, active: boolean): Promise<boolean> => {
-    const { error: updateError } = await supabase
-      .from('message_templates')
-      .update({ 
-        active,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id);
-
-    if (updateError) {
-      toast.error('Erro ao atualizar status');
+  const toggleActive = useCallback((id: string, active: boolean): boolean => {
+    const templateIndex = templates.findIndex(t => t.id === id);
+    if (templateIndex === -1) {
+      toast.error('Template não encontrado');
       return false;
     }
 
+    const updatedTemplates = [...templates];
+    updatedTemplates[templateIndex] = {
+      ...updatedTemplates[templateIndex],
+      active,
+      updated_at: new Date().toISOString()
+    };
+
+    setTemplates(updatedTemplates);
+    saveTemplates(updatedTemplates);
+    
     toast.success(active ? 'Template ativado' : 'Template desativado');
-    await fetchTemplates();
     return true;
-  }, [fetchTemplates]);
+  }, [templates]);
 
   return {
     templates,
     loading,
     error,
-    fetchTemplates,
     createTemplate,
     updateTemplate,
     toggleActive,

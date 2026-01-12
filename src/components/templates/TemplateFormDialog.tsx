@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessageTemplate, CreateTemplateData, UpdateTemplateData } from '@/hooks/useMessageTemplates';
 import { ALLOWED_STAGES, STAGE_LABELS, CANONICAL_FOLLOWUPS, AllowedFollowUpStage, FollowUpRule } from '@/constants/followUpRules';
+import { AlertCircle } from 'lucide-react';
 
 interface TemplateFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   template?: MessageTemplate | null;
   availableDelays: (stage: AllowedFollowUpStage) => FollowUpRule[];
-  onSubmit: (data: CreateTemplateData | UpdateTemplateData, id?: string) => Promise<boolean>;
+  onSubmit: (data: CreateTemplateData | UpdateTemplateData, id?: string) => boolean;
 }
 
 export function TemplateFormDialog({ 
@@ -26,7 +26,6 @@ export function TemplateFormDialog({
 }: TemplateFormDialogProps) {
   const isEditing = !!template;
   
-  const [name, setName] = useState('');
   const [content, setContent] = useState('');
   const [stage, setStage] = useState<AllowedFollowUpStage | ''>('');
   const [delaySeconds, setDelaySeconds] = useState<number | ''>('');
@@ -37,13 +36,11 @@ export function TemplateFormDialog({
   useEffect(() => {
     if (open) {
       if (template) {
-        setName(template.name);
         setContent(template.content);
         setStage(template.stage);
         setDelaySeconds(template.delay_seconds);
         setActive(template.active);
       } else {
-        setName('');
         setContent('');
         setStage('');
         setDelaySeconds('');
@@ -65,30 +62,24 @@ export function TemplateFormDialog({
     }
   }, [stage, isEditing]);
 
-  const handleSubmit = async () => {
-    if (!name.trim() || !content.trim()) {
-      return;
-    }
-
+  const handleSubmit = () => {
     setSubmitting(true);
 
     let success: boolean;
     
     if (isEditing && template) {
-      // Only update allowed fields
-      success = await onSubmit({
-        name: name.trim(),
+      // Only update allowed fields (content, active)
+      success = onSubmit({
         content: content.trim(),
         active
       }, template.id);
     } else {
       // Create new template
-      if (!stage || delaySeconds === '') {
+      if (!stage || delaySeconds === '' || !content.trim()) {
         setSubmitting(false);
         return;
       }
-      success = await onSubmit({
-        name: name.trim(),
+      success = onSubmit({
         content: content.trim(),
         stage,
         delay_seconds: delaySeconds as number,
@@ -104,8 +95,8 @@ export function TemplateFormDialog({
   };
 
   const isFormValid = isEditing 
-    ? name.trim() && content.trim()
-    : name.trim() && content.trim() && stage && delaySeconds !== '';
+    ? content.trim()
+    : content.trim() && stage && delaySeconds !== '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -117,20 +108,22 @@ export function TemplateFormDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome do Template</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Boas-vindas D+2"
-            />
-          </div>
+          {/* Template Key (read-only, shown only when editing) */}
+          {isEditing && template && (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Template Key</Label>
+              <div className="bg-muted px-3 py-2 rounded-md text-sm font-mono text-muted-foreground">
+                {template.template_key}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Identificador único (não editável)
+              </p>
+            </div>
+          )}
 
           {/* Stage - disabled when editing */}
           <div className="space-y-2">
-            <Label htmlFor="stage">Estágio do Lead</Label>
+            <Label htmlFor="stage">Estágio do Lead *</Label>
             <Select 
               value={stage} 
               onValueChange={(value) => setStage(value as AllowedFollowUpStage)}
@@ -156,7 +149,7 @@ export function TemplateFormDialog({
 
           {/* Delay - disabled when editing */}
           <div className="space-y-2">
-            <Label htmlFor="delay">Tempo de Follow-up</Label>
+            <Label htmlFor="delay">Tempo de Follow-up *</Label>
             <Select 
               value={delaySeconds.toString()} 
               onValueChange={(value) => setDelaySeconds(parseInt(value))}
@@ -179,24 +172,25 @@ export function TemplateFormDialog({
               </p>
             )}
             {!isEditing && stage && delayOptions.length === 0 && (
-              <p className="text-xs text-destructive">
-                Todos os follow-ups deste estágio já possuem template
-              </p>
+              <div className="flex items-center gap-2 text-xs text-destructive">
+                <AlertCircle className="h-3 w-3" />
+                <span>Todos os follow-ups deste estágio já possuem template</span>
+              </div>
             )}
           </div>
 
           {/* Content */}
           <div className="space-y-2">
-            <Label htmlFor="content">Conteúdo da Mensagem</Label>
+            <Label htmlFor="content">Conteúdo da Mensagem *</Label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Use {{nome}} para inserir o nome do lead"
+              placeholder="Olá {nome}, ..."
               rows={5}
             />
             <p className="text-xs text-muted-foreground">
-              Variáveis disponíveis: {'{{nome}}'}
+              Variável disponível: <code className="bg-muted px-1 rounded">{'{nome}'}</code>
             </p>
           </div>
 

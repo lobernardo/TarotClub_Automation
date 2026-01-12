@@ -24,16 +24,18 @@ export function TemplateCard({ template, onEdit, onToggleActive }: TemplateCardP
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-foreground">{template.name}</h3>
+            <code className="text-xs bg-muted px-2 py-0.5 rounded font-mono text-muted-foreground">
+              {template.template_key}
+            </code>
             {!template.active && (
-              <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
+              <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded">
                 Inativo
               </span>
             )}
           </div>
           <div className="flex items-center gap-2 mt-2">
             <StageBadge stage={template.stage} />
-            <span className="text-xs text-muted-foreground">
+            <span className="text-sm font-medium text-foreground">
               {getDelayLabel(template.stage as AllowedFollowUpStage, template.delay_seconds)}
             </span>
           </div>
@@ -76,7 +78,7 @@ export function TemplateCard({ template, onEdit, onToggleActive }: TemplateCardP
       </div>
 
       <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
-        <span>Variáveis: {'{{nome}}'}</span>
+        <span>Variável: <code className="bg-muted px-1 rounded">{'{nome}'}</code></span>
       </div>
     </div>
   );

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { FileText, Plus, Loader2 } from 'lucide-react';
+import { FileText, Plus, Loader2, Clock, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMessageTemplates, MessageTemplate, CreateTemplateData, UpdateTemplateData } from '@/hooks/useMessageTemplates';
 import { TemplateCard } from '@/components/templates/TemplateCard';
 import { TemplateFormDialog } from '@/components/templates/TemplateFormDialog';
-import { STAGE_LABELS, AllowedFollowUpStage } from '@/constants/followUpRules';
+import { STAGE_LABELS, AllowedFollowUpStage, ALLOWED_STAGES } from '@/constants/followUpRules';
 
 export default function Templates() {
   const { 
@@ -30,7 +30,7 @@ export default function Templates() {
     setDialogOpen(true);
   };
 
-  const handleSubmit = async (data: CreateTemplateData | UpdateTemplateData, id?: string): Promise<boolean> => {
+  const handleSubmit = (data: CreateTemplateData | UpdateTemplateData, id?: string): boolean => {
     if (id) {
       return updateTemplate(id, data as UpdateTemplateData);
     }
@@ -70,6 +70,34 @@ export default function Templates() {
           </Button>
         </div>
 
+        {/* Business Hours Info Banner */}
+        <div className="flex items-start gap-3 bg-muted/50 border border-border rounded-lg p-4">
+          <Clock className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              ⏰ Janela de Envio
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Os follow-ups são enviados apenas de <strong>segunda a sábado</strong>, entre <strong>09h e 20h</strong>.
+              <br />
+              Mensagens fora desse horário são automaticamente ajustadas para o próximo horário válido.
+            </p>
+          </div>
+        </div>
+
+        {/* Variable Info */}
+        <div className="flex items-start gap-3 bg-primary/5 border border-primary/20 rounded-lg p-4">
+          <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              Variável Disponível
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Use <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">{'{nome}'}</code> no conteúdo para inserir o nome do lead automaticamente.
+            </p>
+          </div>
+        </div>
+
         {/* Loading state */}
         {loading && (
           <div className="flex items-center justify-center py-12">
@@ -97,7 +125,7 @@ export default function Templates() {
         {/* Templates grouped by stage */}
         {!loading && templates.length > 0 && (
           <div className="space-y-8">
-            {(Object.keys(templatesByStage) as AllowedFollowUpStage[]).map((stage) => (
+            {ALLOWED_STAGES.filter(stage => templatesByStage[stage]?.length > 0).map((stage) => (
               <div key={stage}>
                 <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                   {STAGE_LABELS[stage]}
