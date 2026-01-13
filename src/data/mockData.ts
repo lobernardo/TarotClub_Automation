@@ -1,4 +1,4 @@
-import { Lead, Event, Message, LeadStage, CORE_STAGES } from '@/types/database';
+*//import { Lead, Event, Message, LeadStage, CORE_STAGES } from '@/types/database';
 
 // Mock data for UI development - will be replaced by Supabase queries
 export const mockLeads: Lead[] = [
