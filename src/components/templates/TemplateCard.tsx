@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 interface TemplateCardProps {
   template: MessageTemplate;
   onEdit: (template: MessageTemplate) => void;
-  onToggleActive: (id: string, active: boolean) => void;
+  onToggleActive: (id: string, active: boolean) => Promise<boolean> | boolean;
   scheduledCount?: number; // Count from message_queue
 }
 

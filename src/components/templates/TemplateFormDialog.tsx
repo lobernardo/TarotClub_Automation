@@ -14,7 +14,7 @@ interface TemplateFormDialogProps {
   onOpenChange: (open: boolean) => void;
   template?: MessageTemplate | null;
   availableDelays: (stage: TemplateStage) => FollowUpRule[];
-  onSubmit: (data: CreateTemplateData | UpdateTemplateData, id?: string) => boolean;
+  onSubmit: (data: CreateTemplateData | UpdateTemplateData, id?: string) => Promise<boolean> | boolean;
 }
 
 export function TemplateFormDialog({ 
@@ -62,35 +62,37 @@ export function TemplateFormDialog({
     }
   }, [stage, isEditing]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmitting(true);
 
     let success: boolean;
     
-    if (isEditing && template) {
-      // Only update allowed fields (content, active)
-      success = onSubmit({
-        content: content.trim(),
-        active
-      }, template.id);
-    } else {
-      // Create new template
-      if (!stage || delaySeconds === '' || !content.trim()) {
-        setSubmitting(false);
-        return;
+    try {
+      if (isEditing && template) {
+        // Only update allowed fields (content, active)
+        success = await onSubmit({
+          content: content.trim(),
+          active
+        }, template.id);
+      } else {
+        // Create new template
+        if (!stage || delaySeconds === '' || !content.trim()) {
+          setSubmitting(false);
+          return;
+        }
+        success = await onSubmit({
+          content: content.trim(),
+          stage,
+          delay_seconds: delaySeconds as number,
+          active
+        });
       }
-      success = onSubmit({
-        content: content.trim(),
-        stage,
-        delay_seconds: delaySeconds as number,
-        active
-      });
-    }
 
-    setSubmitting(false);
-    
-    if (success) {
-      onOpenChange(false);
+      if (success) {
+        onOpenChange(false);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 

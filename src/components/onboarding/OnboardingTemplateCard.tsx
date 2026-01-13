@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 interface OnboardingTemplateCardProps {
   template: OnboardingTemplate;
   onEdit: (template: OnboardingTemplate) => void;
-  onToggleActive: (id: string) => void;
+  onToggleActive: (id: string) => Promise<void> | void;
   scheduledCount?: number; // Count from message_queue
 }
 

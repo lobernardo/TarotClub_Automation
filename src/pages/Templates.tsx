@@ -34,11 +34,11 @@ export default function Templates() {
     setDialogOpen(true);
   };
 
-  const handleSubmit = (data: CreateTemplateData | UpdateTemplateData, id?: string): boolean => {
+  const handleSubmit = async (data: CreateTemplateData | UpdateTemplateData, id?: string): Promise<boolean> => {
     if (id) {
-      return updateTemplate(id, data as UpdateTemplateData);
+      return await updateTemplate(id, data as UpdateTemplateData);
     }
-    return createTemplate(data as CreateTemplateData);
+    return await createTemplate(data as CreateTemplateData);
   };
 
   // Group templates by stage
