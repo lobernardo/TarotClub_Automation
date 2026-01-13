@@ -8,11 +8,11 @@ import {
   BarChart3,
   Calendar,
   Settings,
-  Sparkles,
   LogOut,
   Heart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import logoDourado from '@/assets/logo_dourado.png';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -33,8 +33,8 @@ export function AppSidebar() {
       <div className="flex h-full flex-col">
         {/* Logo */}
         <div className="flex h-20 items-center gap-3 px-6 border-b border-sidebar-border">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-            <Sparkles className="h-5 w-5 text-primary" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden">
+            <img src={logoDourado} alt="Veranah Alma" className="h-10 w-10 object-contain" />
           </div>
           <div>
             <h1 className="text-lg font-semibold text-sidebar-foreground" style={{ fontFamily: "'Roboto', sans-serif" }}>
