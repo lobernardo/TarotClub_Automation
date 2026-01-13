@@ -33,11 +33,11 @@ export default function Onboarding() {
     setDialogOpen(true);
   };
 
-  const handleSubmit = (data: CreateOnboardingTemplateData | UpdateOnboardingTemplateData, id?: string): boolean => {
+  const handleSubmit = async (data: CreateOnboardingTemplateData | UpdateOnboardingTemplateData, id?: string): Promise<boolean> => {
     if (id) {
-      return updateTemplate(id, data as UpdateOnboardingTemplateData);
+      return await updateTemplate(id, data as UpdateOnboardingTemplateData);
     }
-    return createTemplate(data as CreateOnboardingTemplateData);
+    return await createTemplate(data as CreateOnboardingTemplateData);
   };
 
   return (

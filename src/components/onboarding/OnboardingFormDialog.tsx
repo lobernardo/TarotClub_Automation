@@ -26,7 +26,7 @@ interface OnboardingFormDialogProps {
   onOpenChange: (open: boolean) => void;
   template: OnboardingTemplate | null;
   availableDelays: (currentTemplateId?: string) => FollowUpRule[];
-  onSubmit: (data: CreateOnboardingTemplateData | UpdateOnboardingTemplateData, id?: string) => boolean;
+  onSubmit: (data: CreateOnboardingTemplateData | UpdateOnboardingTemplateData, id?: string) => Promise<boolean> | boolean;
 }
 
 export function OnboardingFormDialog({
@@ -61,15 +61,15 @@ export function OnboardingFormDialog({
     }
   }, [open, template, delays]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (isEditing) {
-      const success = onSubmit({ content, active }, template.id);
+      const success = await onSubmit({ content, active }, template.id);
       if (success) {
         onOpenChange(false);
       }
     } else {
       if (delaySeconds === null) return;
-      const success = onSubmit({
+      const success = await onSubmit({
         stage: 'subscribed_active',
         delay_seconds: delaySeconds,
         content,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import {
   OnboardingStage,
@@ -12,6 +13,7 @@ import {
 export interface OnboardingTemplate {
   id: string;
   template_key: string;
+  name: string | null;
   stage: OnboardingStage;
   delay_seconds: number;
   content: string;
@@ -32,37 +34,53 @@ export interface UpdateOnboardingTemplateData {
   active?: boolean;
 }
 
-const STORAGE_KEY = 'onboarding_templates';
-
 export function useOnboardingTemplates() {
   const [templates, setTemplates] = useState<OnboardingTemplate[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load templates from localStorage
-  useEffect(() => {
-    const loadTemplates = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          setTemplates(JSON.parse(stored));
-        }
-      } catch (error) {
-        console.error('Error loading onboarding templates:', error);
-      } finally {
-        setLoading(false);
+  // Fetch templates from Supabase (only onboarding stages)
+  const fetchTemplates = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data, error: fetchError } = await supabase
+        .from('message_templates')
+        .select('*')
+        .in('stage', ONBOARDING_STAGES)
+        .order('delay_seconds', { ascending: true });
+
+      if (fetchError) {
+        console.error('Error fetching onboarding templates:', fetchError);
+        return;
       }
-    };
-    loadTemplates();
+
+      // Map to our interface
+      const mappedTemplates: OnboardingTemplate[] = (data || []).map((row: any) => ({
+        id: row.id,
+        template_key: row.template_key,
+        name: row.name,
+        stage: row.stage as OnboardingStage,
+        delay_seconds: row.delay_seconds,
+        content: row.content,
+        active: row.active,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      }));
+
+      setTemplates(mappedTemplates);
+    } catch (error) {
+      console.error('Error loading onboarding templates:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Save templates to localStorage
-  const saveTemplates = useCallback((newTemplates: OnboardingTemplate[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newTemplates));
-    setTemplates(newTemplates);
-  }, []);
+  // Initial load
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
 
   // Create a new template
-  const createTemplate = useCallback((data: CreateOnboardingTemplateData): boolean => {
+  const createTemplate = useCallback(async (data: CreateOnboardingTemplateData): Promise<boolean> => {
     // Validation: stage must be an onboarding stage
     if (!ONBOARDING_STAGES.includes(data.stage)) {
       toast({
@@ -107,32 +125,48 @@ export function useOnboardingTemplates() {
     }
 
     const template_key = generateTemplateKey(data.stage, data.delay_seconds);
-    const now = new Date().toISOString();
-    const newTemplate: OnboardingTemplate = {
-      id: crypto.randomUUID(),
-      template_key,
-      stage: data.stage,
-      delay_seconds: data.delay_seconds,
-      content: data.content.trim(),
-      active: data.active ?? true,
-      created_at: now,
-      updated_at: now
-    };
 
-    const newTemplates = [...templates, newTemplate].sort((a, b) => 
-      a.delay_seconds - b.delay_seconds
-    );
+    try {
+      const { error: insertError } = await supabase
+        .from('message_templates')
+        .insert({
+          template_key,
+          name: template_key,
+          content: data.content.trim(),
+          stage: data.stage,
+          delay_seconds: data.delay_seconds,
+          active: data.active ?? true
+        });
 
-    saveTemplates(newTemplates);
-    toast({
-      title: 'Template de onboarding criado',
-      description: `Template "${template_key}" criado com sucesso.`
-    });
-    return true;
-  }, [templates, saveTemplates]);
+      if (insertError) {
+        console.error('Error creating onboarding template:', insertError);
+        toast({
+          title: 'Erro',
+          description: `Erro ao criar template: ${insertError.message}`,
+          variant: 'destructive'
+        });
+        return false;
+      }
+
+      await fetchTemplates();
+      toast({
+        title: 'Template de onboarding criado',
+        description: `Template "${template_key}" criado com sucesso.`
+      });
+      return true;
+    } catch (err) {
+      console.error('Error in createTemplate:', err);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao criar template.',
+        variant: 'destructive'
+      });
+      return false;
+    }
+  }, [templates, fetchTemplates]);
 
   // Update an existing template (only content and active)
-  const updateTemplate = useCallback((id: string, data: UpdateOnboardingTemplateData): boolean => {
+  const updateTemplate = useCallback(async (id: string, data: UpdateOnboardingTemplateData): Promise<boolean> => {
     const template = templates.find(t => t.id === id);
     if (!template) {
       toast({
@@ -153,38 +187,83 @@ export function useOnboardingTemplates() {
       return false;
     }
 
-    const updatedTemplate: OnboardingTemplate = {
-      ...template,
-      content: data.content !== undefined ? data.content.trim() : template.content,
-      active: data.active !== undefined ? data.active : template.active,
-      updated_at: new Date().toISOString()
-    };
+    try {
+      const updateData: Record<string, any> = {
+        updated_at: new Date().toISOString()
+      };
 
-    const newTemplates = templates.map(t => t.id === id ? updatedTemplate : t);
-    saveTemplates(newTemplates);
-    toast({
-      title: 'Template atualizado',
-      description: 'As alterações foram salvas.'
-    });
-    return true;
-  }, [templates, saveTemplates]);
+      if (data.content !== undefined) {
+        updateData.content = data.content.trim();
+      }
+      if (data.active !== undefined) {
+        updateData.active = data.active;
+      }
+
+      const { error: updateError } = await supabase
+        .from('message_templates')
+        .update(updateData)
+        .eq('id', id);
+
+      if (updateError) {
+        console.error('Error updating onboarding template:', updateError);
+        toast({
+          title: 'Erro',
+          description: `Erro ao atualizar template: ${updateError.message}`,
+          variant: 'destructive'
+        });
+        return false;
+      }
+
+      await fetchTemplates();
+      toast({
+        title: 'Template atualizado',
+        description: 'As alterações foram salvas.'
+      });
+      return true;
+    } catch (err) {
+      console.error('Error in updateTemplate:', err);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao atualizar template.',
+        variant: 'destructive'
+      });
+      return false;
+    }
+  }, [templates, fetchTemplates]);
 
   // Toggle active status
-  const toggleActive = useCallback((id: string) => {
+  const toggleActive = useCallback(async (id: string): Promise<void> => {
     const template = templates.find(t => t.id === id);
     if (!template) return;
 
-    const newTemplates = templates.map(t => 
-      t.id === id 
-        ? { ...t, active: !t.active, updated_at: new Date().toISOString() }
-        : t
-    );
-    saveTemplates(newTemplates);
-    toast({
-      title: template.active ? 'Template desativado' : 'Template ativado',
-      description: `O template foi ${template.active ? 'desativado' : 'ativado'}.`
-    });
-  }, [templates, saveTemplates]);
+    try {
+      const { error: updateError } = await supabase
+        .from('message_templates')
+        .update({
+          active: !template.active,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (updateError) {
+        console.error('Error toggling onboarding template:', updateError);
+        toast({
+          title: 'Erro',
+          description: `Erro ao alterar status: ${updateError.message}`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      await fetchTemplates();
+      toast({
+        title: template.active ? 'Template desativado' : 'Template ativado',
+        description: `O template foi ${template.active ? 'desativado' : 'ativado'}.`
+      });
+    } catch (err) {
+      console.error('Error in toggleActive:', err);
+    }
+  }, [templates, fetchTemplates]);
 
   // Get available delays (that don't have templates yet)
   const getAvailableDelays = useCallback((currentTemplateId?: string): FollowUpRule[] => {
@@ -204,6 +283,7 @@ export function useOnboardingTemplates() {
     createTemplate,
     updateTemplate,
     toggleActive,
-    getAvailableDelays
+    getAvailableDelays,
+    refetch: fetchTemplates
   };
 }
