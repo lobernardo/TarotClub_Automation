@@ -1,55 +1,62 @@
-import { useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { KanbanColumn } from '@/components/crm/KanbanColumn';
-import { StageManagementDialog } from '@/components/crm/StageManagementDialog';
-import { LeadPredictedFollows } from '@/components/crm/LeadPredictedFollows';
-import { LeadMessageQueue } from '@/components/crm/LeadMessageQueue';
-import { getLeadsByStage, mockLeads } from '@/data/mockData';
-import { Lead, LeadStage, STAGE_CONFIG, CORE_STAGES } from '@/types/database';
-import { Search, Filter, Settings2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { StageBadge } from '@/components/ui/StageBadge';
-import { formatDistanceToNow, format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { useMessageTemplates } from '@/hooks/useMessageTemplates';
-import { useOnboardingTemplates } from '@/hooks/useOnboardingTemplates';
-import { useMessageQueue } from '@/hooks/useMessageQueue';
+import { useState } from "react";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { KanbanColumn } from "@/components/crm/KanbanColumn";
+import { StageManagementDialog } from "@/components/crm/StageManagementDialog";
+import { LeadPredictedFollows } from "@/components/crm/LeadPredictedFollows";
+import { LeadMessageQueue } from "@/components/crm/LeadMessageQueue";
+import { Lead, LeadStage, CORE_STAGES } from "@/types/database";
+import { Search, Filter, Settings2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { StageBadge } from "@/components/ui/StageBadge";
+import { formatDistanceToNow, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useMessageTemplates } from "@/hooks/useMessageTemplates";
+import { useOnboardingTemplates } from "@/hooks/useOnboardingTemplates";
+import { useMessageQueue } from "@/hooks/useMessageQueue";
+import { useLeads } from "@/hooks/useLeads";
 
 export default function CRM() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [stageDialogOpen, setStageDialogOpen] = useState(false);
-  
-  // Load templates for preview
+
+  // 🔗 LEADS REAIS DO SUPABASE
+  const { leads, loading } = useLeads();
+
+  // Templates (preview / simulação)
   const { templates: messageTemplates } = useMessageTemplates();
   const { templates: onboardingTemplates } = useOnboardingTemplates();
   const allTemplates = [...messageTemplates, ...onboardingTemplates];
-  
-  // Load message queue
+
+  // Message queue real
   const { queueItems, loading: queueLoading } = useMessageQueue();
-  
-  const leadsByStage = getLeadsByStage();
 
-  // Filter leads by search
-  const filteredLeadsByStage = Object.fromEntries(
-    Object.entries(leadsByStage).map(([stage, leads]) => [
-      stage,
-      leads.filter(lead =>
-        lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.phone.includes(searchQuery)
-      )
-    ])
-  ) as Record<LeadStage, Lead[]>;
+  // Agrupar leads por estágio (REAL)
+  const leadsByStage: Record<LeadStage, Lead[]> = CORE_STAGES.reduce(
+    (acc, stage) => {
+      acc[stage] = leads.filter((lead) => lead.stage === stage);
+      return acc;
+    },
+    {} as Record<LeadStage, Lead[]>,
+  );
 
-  const totalLeads = mockLeads.length;
+  // Filtro por busca
+  const filteredLeadsByStage: Record<LeadStage, Lead[]> = CORE_STAGES.reduce(
+    (acc, stage) => {
+      acc[stage] = leadsByStage[stage].filter(
+        (lead) =>
+          lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          lead.phone.includes(searchQuery),
+      );
+      return acc;
+    },
+    {} as Record<LeadStage, Lead[]>,
+  );
+
+  const totalLeads = leads.length;
   const filteredTotal = Object.values(filteredLeadsByStage).flat().length;
 
   return (
@@ -77,138 +84,78 @@ export default function CRM() {
             <Button variant="outline" size="icon" className="border-border">
               <Filter className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="outline" 
-              className="border-border gap-2"
-              onClick={() => setStageDialogOpen(true)}
-            >
+            <Button variant="outline" className="border-border gap-2" onClick={() => setStageDialogOpen(true)}>
               <Settings2 className="h-4 w-4" />
               Gerenciar Etapas
             </Button>
           </div>
         </div>
 
-        {/* Kanban Board - Uses CORE_STAGES only */}
+        {/* Kanban */}
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-max">
             {CORE_STAGES.map((stage) => (
               <KanbanColumn
                 key={stage}
                 stage={stage}
-                leads={filteredLeadsByStage[stage] || []}
+                leads={filteredLeadsByStage[stage]}
                 onLeadClick={setSelectedLead}
               />
             ))}
           </div>
         </div>
 
-        {/* Stage Management Dialog */}
-        <StageManagementDialog 
-          open={stageDialogOpen} 
-          onOpenChange={setStageDialogOpen}
-        />
+        {/* Stage Management */}
+        <StageManagementDialog open={stageDialogOpen} onOpenChange={setStageDialogOpen} />
 
-        {/* Lead Detail Sheet */}
+        {/* Lead Detail */}
         <Sheet open={!!selectedLead} onOpenChange={() => setSelectedLead(null)}>
           <SheetContent className="w-full sm:max-w-lg bg-card border-border overflow-y-auto">
             {selectedLead && (
               <>
                 <SheetHeader>
-                  <SheetTitle className="text-2xl font-serif text-foreground">
-                    {selectedLead.name}
-                  </SheetTitle>
+                  <SheetTitle className="text-2xl font-serif text-foreground">{selectedLead.name}</SheetTitle>
                 </SheetHeader>
 
                 <div className="mt-6 space-y-6">
-                  {/* Status */}
                   <div className="flex items-center gap-3">
                     <StageBadge stage={selectedLead.stage} />
-                    {selectedLead.silenced_until && new Date(selectedLead.silenced_until) > new Date() && (
-                      <span className="text-xs text-amber-400 bg-amber-400/10 rounded px-2 py-1">
-                        🔇 Silenciado
+                  </div>
+
+                  <div className="glass-card rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Email</span>
+                      <span>{selectedLead.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Telefone</span>
+                      <span>{selectedLead.phone}</span>
+                    </div>
+                  </div>
+
+                  <div className="glass-card rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Criado em</span>
+                      <span>
+                        {format(new Date(selectedLead.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                       </span>
+                    </div>
+                    {selectedLead.last_interaction_at && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Última interação</span>
+                        <span>
+                          {formatDistanceToNow(new Date(selectedLead.last_interaction_at), {
+                            addSuffix: true,
+                            locale: ptBR,
+                          })}
+                        </span>
+                      </div>
                     )}
                   </div>
 
-                  {/* Contact Info */}
-                  <div className="glass-card rounded-lg p-4 space-y-3">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                      Informações de Contato
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Email</span>
-                        <span className="text-foreground">{selectedLead.email}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Telefone</span>
-                        <span className="text-foreground">{selectedLead.phone}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Origem</span>
-                        <span className="text-foreground capitalize">{selectedLead.source || '-'}</span>
-                      </div>
-                    </div>
-                  </div>
+                  <LeadMessageQueue lead={selectedLead} queueItems={queueItems} loading={queueLoading} />
 
-                  {/* Timeline */}
-                  <div className="glass-card rounded-lg p-4 space-y-3">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                      Linha do Tempo
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Captado em</span>
-                        <span className="text-foreground">
-                          {format(new Date(selectedLead.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </span>
-                      </div>
-                      {selectedLead.last_interaction_at && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Última interação</span>
-                          <span className="text-foreground">
-                            {formatDistanceToNow(new Date(selectedLead.last_interaction_at), {
-                              addSuffix: true,
-                              locale: ptBR
-                            })}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Notes */}
-                  {selectedLead.notes && (
-                    <div className="glass-card rounded-lg p-4 space-y-3">
-                      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                        Observações
-                      </h3>
-                      <p className="text-foreground">{selectedLead.notes}</p>
-                    </div>
-                  )}
-
-                  {/* Message Queue (Real) */}
-                  <LeadMessageQueue 
-                    lead={selectedLead}
-                    queueItems={queueItems}
-                    loading={queueLoading}
-                  />
-
-                  {/* Predicted Follows (Simulation) */}
-                  <LeadPredictedFollows 
-                    lead={selectedLead} 
-                    templates={allTemplates} 
-                  />
-
-                  {/* Actions */}
-                  <div className="flex gap-3 pt-4">
-                    <Button className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
-                      Enviar Mensagem
-                    </Button>
-                    <Button variant="outline" className="flex-1 border-border">
-                      Ver Histórico
-                    </Button>
-                  </div>
+                  <LeadPredictedFollows lead={selectedLead} templates={allTemplates} />
                 </div>
               </>
             )}
