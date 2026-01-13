@@ -109,7 +109,7 @@
   h4,
   h5,
   h6 {
-    font-family: "Cormorant Garamond", serif;
+    font-family: "Roboto", serif;
     @apply font-semibold tracking-tight;
   }
 }
