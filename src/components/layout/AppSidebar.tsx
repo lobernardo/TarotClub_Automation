@@ -12,7 +12,7 @@ import {
   Heart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import logoDourado from '@/assets/logo_dourado.png';
+import logoDourado from '@/assets/logo_dourado_transparent.png';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
