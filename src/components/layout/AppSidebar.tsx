@@ -37,7 +37,7 @@ export function AppSidebar() {
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-sidebar-foreground font-serif">
+            <h1 className="text-lg font-semibold text-sidebar-foreground" style={{ fontFamily: "'Roboto', sans-serif" }}>
               Veranah Alma
             </h1>
             <p className="text-xs text-muted-foreground">Clube do Tarot</p>
