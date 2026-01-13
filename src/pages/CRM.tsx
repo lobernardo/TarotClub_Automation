@@ -5,7 +5,7 @@ import { StageManagementDialog } from "@/components/crm/StageManagementDialog";
 import { LeadPredictedFollows } from "@/components/crm/LeadPredictedFollows";
 import { LeadMessageQueue } from "@/components/crm/LeadMessageQueue";
 
-import { getLeadsByStage, mockLeads } from "@/data/mockData";
+import { useLeads } from "@/hooks/useLeads";
 import { Lead, LeadStage, CORE_STAGES } from "@/types/database";
 
 import { Search, Filter, Settings2 } from "lucide-react";
@@ -32,13 +32,12 @@ export default function CRM() {
   const allTemplates = [...messageTemplates, ...onboardingTemplates];
 
   const { queueItems, loading: queueLoading } = useMessageQueue();
-
-  const leadsByStage = getLeadsByStage();
+  const { leads, leadsByStage } = useLeads();
 
   const filteredLeadsByStage = Object.fromEntries(
-    Object.entries(leadsByStage).map(([stage, leads]) => [
+    Object.entries(leadsByStage).map(([stage, stageLeads]) => [
       stage,
-      leads.filter(
+      stageLeads.filter(
         (lead) =>
           lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -47,7 +46,7 @@ export default function CRM() {
     ]),
   ) as Record<LeadStage, Lead[]>;
 
-  const totalLeads = mockLeads.length;
+  const totalLeads = leads.length;
   const filteredTotal = Object.values(filteredLeadsByStage).flat().length;
 
   return (
