@@ -56,6 +56,11 @@ export default function CRM() {
     }
   };
 
+  const handleLeadDrop = async (leadId: string, fromStage: LeadStage, toStage: LeadStage) => {
+    // Only call changeStage - it already handles event logging and queue cancellation
+    await changeStage(leadId, toStage);
+  };
+
   const handleLeadCreated = () => {
     refetchLeads();
   };
@@ -106,6 +111,7 @@ export default function CRM() {
                 stage={stage}
                 leads={filteredLeadsByStage[stage] || []}
                 onLeadClick={setSelectedLead}
+                onLeadDrop={handleLeadDrop}
               />
             ))}
           </div>
