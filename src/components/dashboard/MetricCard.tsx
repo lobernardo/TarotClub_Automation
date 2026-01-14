@@ -30,15 +30,15 @@ export function MetricCard({
 
   const getTrendColor = () => {
     if (!change) return 'text-muted-foreground';
-    return change > 0 ? 'text-emerald-400' : 'text-rose-400';
+    return change > 0 ? 'text-emerald-600' : 'text-rose-500';
   };
 
   return (
     <div className={cn('metric-card animate-fade-in', className)}>
       <div className="flex items-start justify-between">
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="text-3xl font-semibold text-foreground font-serif">{value}</p>
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="text-3xl font-semibold text-foreground tracking-tight">{value}</p>
           {change !== undefined && (
             <div className={cn('flex items-center gap-1.5 text-sm', getTrendColor())}>
               {getTrendIcon()}
@@ -50,8 +50,8 @@ export function MetricCard({
           )}
         </div>
         {icon && (
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            {icon}
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-soft/50">
+            <div className="text-gold">{icon}</div>
           </div>
         )}
       </div>
