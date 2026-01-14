@@ -5,8 +5,6 @@ import { Switch } from '@/components/ui/switch';
 import { Edit, Clock, Key, Users, Send } from 'lucide-react';
 import { OnboardingTemplate } from '@/hooks/useOnboardingTemplates';
 import { getDelayLabel, ONBOARDING_STAGE_LABELS } from '@/constants/followUpRules';
-import { countEligibleLeads } from '@/lib/dispatcher';
-import { mockLeads } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
 interface OnboardingTemplateCardProps {
@@ -14,14 +12,12 @@ interface OnboardingTemplateCardProps {
   onEdit: (template: OnboardingTemplate) => void;
   onToggleActive: (id: string) => Promise<void> | void;
   scheduledCount?: number; // Count from message_queue
+  eligibleCount?: number; // Count of eligible leads (from Supabase)
 }
 
-export function OnboardingTemplateCard({ template, onEdit, onToggleActive, scheduledCount = 0 }: OnboardingTemplateCardProps) {
+export function OnboardingTemplateCard({ template, onEdit, onToggleActive, scheduledCount = 0, eligibleCount = 0 }: OnboardingTemplateCardProps) {
   const delayLabel = getDelayLabel(template.stage, template.delay_seconds);
   const stageLabel = ONBOARDING_STAGE_LABELS[template.stage];
-  
-  // Count eligible leads for this template
-  const eligibleCount = countEligibleLeads(template, mockLeads);
 
   return (
     <Card className="glass-card border-border hover:border-primary/30 transition-colors">

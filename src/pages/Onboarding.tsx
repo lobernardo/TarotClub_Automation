@@ -4,6 +4,7 @@ import { UserCheck, Plus, Loader2, Clock, Info, AlertCircle } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { useOnboardingTemplates, OnboardingTemplate, CreateOnboardingTemplateData, UpdateOnboardingTemplateData } from '@/hooks/useOnboardingTemplates';
 import { useMessageQueue } from '@/hooks/useMessageQueue';
+import { useLeadCounts } from '@/hooks/useLeadCounts';
 import { OnboardingTemplateCard } from '@/components/onboarding/OnboardingTemplateCard';
 import { OnboardingFormDialog } from '@/components/onboarding/OnboardingFormDialog';
 
@@ -19,6 +20,9 @@ export default function Onboarding() {
 
   // Load message queue for scheduled counts
   const { countScheduledForTemplate } = useMessageQueue();
+  
+  // Load lead counts for eligible leads
+  const { getCountForStage } = useLeadCounts();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<OnboardingTemplate | null>(null);
@@ -146,6 +150,7 @@ export default function Onboarding() {
                   onEdit={handleEditTemplate}
                   onToggleActive={toggleActive}
                   scheduledCount={countScheduledForTemplate(template.template_key)}
+                  eligibleCount={getCountForStage(template.stage)}
                 />
               ))}
             </div>

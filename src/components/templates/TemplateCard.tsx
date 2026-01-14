@@ -4,8 +4,6 @@ import { StageBadge } from '@/components/ui/StageBadge';
 import { Badge } from '@/components/ui/badge';
 import { MessageTemplate } from '@/hooks/useMessageTemplates';
 import { getDelayLabel, AllowedFollowUpStage } from '@/constants/followUpRules';
-import { countEligibleLeads } from '@/lib/dispatcher';
-import { mockLeads } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
 interface TemplateCardProps {
@@ -13,12 +11,10 @@ interface TemplateCardProps {
   onEdit: (template: MessageTemplate) => void;
   onToggleActive: (id: string, active: boolean) => Promise<boolean> | boolean;
   scheduledCount?: number; // Count from message_queue
+  eligibleCount?: number; // Count of eligible leads (from Supabase)
 }
 
-export function TemplateCard({ template, onEdit, onToggleActive, scheduledCount = 0 }: TemplateCardProps) {
-  // Count eligible leads for this template
-  const eligibleCount = countEligibleLeads(template, mockLeads);
-
+export function TemplateCard({ template, onEdit, onToggleActive, scheduledCount = 0, eligibleCount = 0 }: TemplateCardProps) {
   return (
     <div
       className={cn(
