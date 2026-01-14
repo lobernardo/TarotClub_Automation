@@ -57,11 +57,34 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Veranah Alma custom colors
+        gold: {
+          DEFAULT: "hsl(44, 38%, 71%)", // #D8C690
+          soft: "hsl(45, 35%, 81%)", // #E6DDB8
+          muted: "hsl(45, 28%, 66%)", // #C9BC8A
+        },
+        veranah: {
+          blue: "hsl(204, 18%, 24%)", // #2F3A44
+          "blue-hover": "hsl(204, 15%, 28%)", // #3A4550
+          "blue-soft": "hsl(210, 11%, 93%)", // #E9EDF0
+          white: "hsl(0, 0%, 100%)", // #FFFFFF
+          "white-soft": "hsl(0, 0%, 98%)", // #FAFAFA
+          "white-warm": "hsl(40, 18%, 96%)", // #F6F5F2
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        soft: "0 2px 8px rgba(0, 0, 0, 0.04)",
+        card: "0 4px 16px rgba(0, 0, 0, 0.06)",
+        elevated: "0 8px 24px rgba(0, 0, 0, 0.08)",
+      },
+      fontFamily: {
+        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        display: ["Playfair Display", "serif"],
       },
       keyframes: {
         "accordion-down": {
