@@ -2,37 +2,36 @@ import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { KanbanColumn } from "@/components/crm/KanbanColumn";
 import { StageManagementDialog } from "@/components/crm/StageManagementDialog";
-import { LeadPredictedFollows } from "@/components/crm/LeadPredictedFollows";
-import { LeadMessageQueue } from "@/components/crm/LeadMessageQueue";
+import { LeadDetailSheet } from "@/components/crm/LeadDetailSheet";
+import { CreateLeadDialog } from "@/components/crm/CreateLeadDialog";
 
 import { useLeads } from "@/hooks/useLeads";
+import { useLeadData } from "@/hooks/useLeadData";
+import { useLeadActions } from "@/hooks/useLeadActions";
 import { Lead, LeadStage, CORE_STAGES } from "@/types/database";
 
-import { Search, Filter, Settings2 } from "lucide-react";
+import { Search, Filter, Settings2, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-
-import { StageBadge } from "@/components/ui/StageBadge";
-import { formatDistanceToNow, format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-
-import { useMessageTemplates } from "@/hooks/useMessageTemplates";
-import { useOnboardingTemplates } from "@/hooks/useOnboardingTemplates";
-import { useMessageQueue } from "@/hooks/useMessageQueue";
 
 export default function CRM() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [stageDialogOpen, setStageDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  const { templates: messageTemplates } = useMessageTemplates();
-  const { templates: onboardingTemplates } = useOnboardingTemplates();
-  const allTemplates = [...messageTemplates, ...onboardingTemplates];
-
-  const { queueItems, loading: queueLoading } = useMessageQueue();
-  const { leads, leadsByStage } = useLeads();
+  const { leads, leadsByStage, refetch: refetchLeads } = useLeads();
+  const { events, messages, queueItems, subscription, loading: leadDataLoading } = useLeadData(selectedLead?.id || null);
+  const { changeStage } = useLeadActions(() => {
+    refetchLeads();
+    // Refetch the selected lead data
+    if (selectedLead) {
+      const updatedLead = leads.find(l => l.id === selectedLead.id);
+      if (updatedLead) {
+        setSelectedLead(updatedLead);
+      }
+    }
+  });
 
   const filteredLeadsByStage = Object.fromEntries(
     Object.entries(leadsByStage).map(([stage, stageLeads]) => [
@@ -48,6 +47,18 @@ export default function CRM() {
 
   const totalLeads = leads.length;
   const filteredTotal = Object.values(filteredLeadsByStage).flat().length;
+
+  const handleStageChange = async (leadId: string, newStage: LeadStage) => {
+    await changeStage(leadId, newStage);
+    // Update selected lead with new stage
+    if (selectedLead && selectedLead.id === leadId) {
+      setSelectedLead({ ...selectedLead, stage: newStage });
+    }
+  };
+
+  const handleLeadCreated = () => {
+    refetchLeads();
+  };
 
   return (
     <AppLayout>
@@ -79,6 +90,11 @@ export default function CRM() {
               <Settings2 className="h-4 w-4" />
               Gerenciar Etapas
             </Button>
+
+            <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
+              <UserPlus className="h-4 w-4" />
+              Novo Lead
+            </Button>
           </div>
         </div>
 
@@ -97,27 +113,23 @@ export default function CRM() {
 
         <StageManagementDialog open={stageDialogOpen} onOpenChange={setStageDialogOpen} />
 
-        <Sheet open={!!selectedLead} onOpenChange={() => setSelectedLead(null)}>
-          <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-            {selectedLead && (
-              <>
-                <SheetHeader>
-                  <SheetTitle className="text-2xl">{selectedLead.name}</SheetTitle>
-                </SheetHeader>
+        <CreateLeadDialog 
+          open={createDialogOpen} 
+          onOpenChange={setCreateDialogOpen}
+          onSuccess={handleLeadCreated}
+        />
 
-                <div className="mt-6 space-y-6">
-                  <div className="flex items-center gap-3">
-                    <StageBadge stage={selectedLead.stage} />
-                  </div>
-
-                  <LeadMessageQueue lead={selectedLead} queueItems={queueItems} loading={queueLoading} />
-
-                  <LeadPredictedFollows lead={selectedLead} templates={allTemplates} />
-                </div>
-              </>
-            )}
-          </SheetContent>
-        </Sheet>
+        <LeadDetailSheet
+          lead={selectedLead}
+          open={!!selectedLead}
+          onOpenChange={(open) => !open && setSelectedLead(null)}
+          events={events}
+          messages={messages}
+          queueItems={queueItems}
+          subscription={subscription}
+          loading={leadDataLoading}
+          onStageChange={handleStageChange}
+        />
       </div>
     </AppLayout>
   );
