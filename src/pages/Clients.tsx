@@ -1,47 +1,54 @@
-import { useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { useClients } from '@/hooks/useClients';
-import { useLeadData } from '@/hooks/useLeadData';
-import { useLeadActions } from '@/hooks/useLeadActions';
-import { Lead, LeadStage, STAGE_CONFIG } from '@/types/database';
-import { LeadDetailSheet } from '@/components/crm/LeadDetailSheet';
-import { StageBadge } from '@/components/ui/StageBadge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, UserCheck, Mail, Phone, Calendar, List, LayoutGrid, Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { format, formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { useClients } from "@/hooks/useClients";
+import { useLeadData } from "@/hooks/useLeadData";
+import { useLeadActions } from "@/hooks/useLeadActions";
+import { Lead, LeadStage, STAGE_CONFIG } from "@/types/database";
+import { LeadDetailSheet } from "@/components/crm/LeadDetailSheet";
+import { StageBadge } from "@/components/ui/StageBadge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, UserCheck, Mail, Phone, Calendar, List, LayoutGrid, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { format, formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 // Client stages for Kanban
-const CLIENT_STAGES: LeadStage[] = ['subscribed_active', 'subscribed_past_due', 'subscribed_canceled'];
+const CLIENT_STAGES: LeadStage[] = ["subscribed_active", "subscribed_past_due", "subscribed_canceled"];
 
 export default function Clients() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<Lead | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
 
   const { clients, clientsByStatus, loading, refetch } = useClients();
-  const { events, messages, queueItems, subscription, loading: clientDataLoading } = useLeadData(selectedClient?.id || null);
+  const {
+    events,
+    messages,
+    queueItems,
+    subscription,
+    loading: clientDataLoading,
+  } = useLeadData(selectedClient?.id || null);
   const { changeStage } = useLeadActions(() => {
     refetch();
     if (selectedClient) {
-      const updated = clients.find(c => c.id === selectedClient.id);
+      const updated = clients.find((c) => c.id === selectedClient.id);
       if (updated) setSelectedClient(updated);
     }
   });
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.phone.includes(searchQuery)
+  const filteredClients = clients.filter(
+    (client) =>
+      client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.whatsapp.includes(searchQuery),
   );
 
   const filteredByStatus = {
-    active: filteredClients.filter(c => c.stage === 'subscribed_active'),
-    past_due: filteredClients.filter(c => c.stage === 'subscribed_past_due'),
-    canceled: filteredClients.filter(c => c.stage === 'subscribed_canceled'),
+    active: filteredClients.filter((c) => c.stage === "subscribed_active"),
+    past_due: filteredClients.filter((c) => c.stage === "subscribed_past_due"),
+    canceled: filteredClients.filter((c) => c.stage === "subscribed_canceled"),
   };
 
   const activeCount = clientsByStatus.active.length;
@@ -67,7 +74,11 @@ export default function Clients() {
         </div>
         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
           <span className="text-primary font-semibold">
-            {client.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+            {client.name
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .slice(0, 2)}
           </span>
         </div>
       </div>
@@ -77,26 +88,25 @@ export default function Clients() {
           <Mail className="h-4 w-4" />
           <span className="truncate">{client.email}</span>
         </div>
-        {client.phone && (
+        {client.whatsapp && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Phone className="h-4 w-4" />
-            <span>{client.phone}</span>
+            <span>{client.whatsapp}</span>
           </div>
         )}
         <div className="flex items-center gap-2 text-muted-foreground">
           <Calendar className="h-4 w-4" />
-          <span>
-            Membro desde {format(new Date(client.created_at), "MMM 'de' yyyy", { locale: ptBR })}
-          </span>
+          <span>Membro desde {format(new Date(client.created_at), "MMM 'de' yyyy", { locale: ptBR })}</span>
         </div>
       </div>
 
       {client.last_interaction_at && (
         <div className="mt-4 pt-4 border-t border-border">
           <p className="text-xs text-muted-foreground">
-            Última interação: {formatDistanceToNow(new Date(client.last_interaction_at), {
+            Última interação:{" "}
+            {formatDistanceToNow(new Date(client.last_interaction_at), {
               addSuffix: true,
-              locale: ptBR
+              locale: ptBR,
             })}
           </p>
         </div>
@@ -114,27 +124,17 @@ export default function Clients() {
     <div className="kanban-column min-w-[280px] max-w-[320px]">
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-2">
-          <span className={cn('stage-badge', STAGE_CONFIG[stage].color)}>
-            {STAGE_CONFIG[stage].label}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {clients.length}
-          </span>
+          <span className={cn("stage-badge", STAGE_CONFIG[stage].color)}>{STAGE_CONFIG[stage].label}</span>
+          <span className="text-xs text-muted-foreground">{clients.length}</span>
         </div>
       </div>
-      
+
       <div className="space-y-3 flex-1 overflow-y-auto">
         {clients.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            Nenhum cliente neste status
-          </div>
+          <div className="text-center py-8 text-muted-foreground text-sm">Nenhum cliente neste status</div>
         ) : (
           clients.map((client) => (
-            <ClientCard 
-              key={client.id} 
-              client={client} 
-              onClick={() => setSelectedClient(client)} 
-            />
+            <ClientCard key={client.id} client={client} onClick={() => setSelectedClient(client)} />
           ))
         )}
       </div>
@@ -169,17 +169,17 @@ export default function Clients() {
 
             <div className="flex border border-border rounded-md">
               <Button
-                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                variant={viewMode === "list" ? "secondary" : "ghost"}
                 size="icon"
-                onClick={() => setViewMode('list')}
+                onClick={() => setViewMode("list")}
                 className="rounded-r-none"
               >
                 <List className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
+                variant={viewMode === "kanban" ? "secondary" : "ghost"}
                 size="icon"
-                onClick={() => setViewMode('kanban')}
+                onClick={() => setViewMode("kanban")}
                 className="rounded-l-none"
               >
                 <LayoutGrid className="h-4 w-4" />
@@ -194,15 +194,11 @@ export default function Clients() {
           </div>
         ) : (
           <>
-            {viewMode === 'list' ? (
+            {viewMode === "list" ? (
               /* List View */
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredClients.map((client) => (
-                  <ClientCard 
-                    key={client.id} 
-                    client={client} 
-                    onClick={() => setSelectedClient(client)} 
-                  />
+                  <ClientCard key={client.id} client={client} onClick={() => setSelectedClient(client)} />
                 ))}
               </div>
             ) : (
@@ -210,10 +206,18 @@ export default function Clients() {
               <div className="overflow-x-auto pb-4">
                 <div className="flex gap-4 min-w-max">
                   {CLIENT_STAGES.map((stage) => (
-                    <KanbanColumn 
-                      key={stage} 
-                      stage={stage} 
-                      clients={filteredByStatus[stage === 'subscribed_active' ? 'active' : stage === 'subscribed_past_due' ? 'past_due' : 'canceled']} 
+                    <KanbanColumn
+                      key={stage}
+                      stage={stage}
+                      clients={
+                        filteredByStatus[
+                          stage === "subscribed_active"
+                            ? "active"
+                            : stage === "subscribed_past_due"
+                              ? "past_due"
+                              : "canceled"
+                        ]
+                      }
                     />
                   ))}
                 </div>
@@ -223,11 +227,11 @@ export default function Clients() {
             {filteredClients.length === 0 && (
               <div className="text-center py-12 glass-card rounded-xl">
                 <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  Nenhum cliente encontrado
-                </h3>
+                <h3 className="text-lg font-medium text-foreground mb-2">Nenhum cliente encontrado</h3>
                 <p className="text-muted-foreground">
-                  {searchQuery ? 'Tente buscar por outro termo' : 'Os clientes aparecerão aqui quando houver assinantes'}
+                  {searchQuery
+                    ? "Tente buscar por outro termo"
+                    : "Os clientes aparecerão aqui quando houver assinantes"}
                 </p>
               </div>
             )}
