@@ -1,26 +1,26 @@
 /**
  * Create Lead Dialog
  * Allows manual lead creation with:
- * - Name, email, phone (required: name + at least one contact)
+ * - Name, email, whatsapp (required: name + at least one contact)
  * - Origin selection
  * - Initial stage selection
  * - Notes
  * - Duplicate check before creation
  */
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { LeadStage, STAGE_CONFIG, CORE_STAGES } from '@/types/database';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Loader2, AlertTriangle, UserPlus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LeadStage, STAGE_CONFIG, CORE_STAGES } from "@/types/database";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Loader2, AlertTriangle, UserPlus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CreateLeadDialogProps {
   open: boolean;
@@ -29,121 +29,100 @@ interface CreateLeadDialogProps {
 }
 
 const SOURCES = [
-  { value: 'whatsapp', label: 'WhatsApp' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'facebook', label: 'Facebook' },
-  { value: 'google', label: 'Google Ads' },
-  { value: 'referral', label: 'Indicação' },
-  { value: 'landing_page', label: 'Landing Page' },
-  { value: 'manual', label: 'Cadastro Manual' },
-  { value: 'other', label: 'Outro' },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "instagram", label: "Instagram" },
+  { value: "facebook", label: "Facebook" },
+  { value: "google", label: "Google Ads" },
+  { value: "referral", label: "Indicação" },
+  { value: "landing_page", label: "Landing Page" },
+  { value: "manual", label: "Cadastro Manual" },
+  { value: "other", label: "Outro" },
 ];
 
 export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDialogProps) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [source, setSource] = useState('manual');
-  const [stage, setStage] = useState<LeadStage>('captured_form');
-  const [notes, setNotes] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [source, setSource] = useState("manual");
+  const [stage, setStage] = useState<LeadStage>("captured_form");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
   const resetForm = () => {
-    setName('');
-    setEmail('');
-    setPhone('');
-    setSource('manual');
-    setStage('captured_form');
-    setNotes('');
+    setName("");
+    setEmail("");
+    setWhatsapp("");
+    setSource("manual");
+    setStage("captured_form");
+    setNotes("");
     setDuplicateWarning(null);
   };
 
   const checkDuplicate = async (): Promise<boolean> => {
     setDuplicateWarning(null);
 
-    // Build OR conditions for duplicate check
-    const conditions = [];
-    if (email.trim()) {
-      conditions.push({ email: email.trim().toLowerCase() });
-    }
-    if (phone.trim()) {
-      conditions.push({ phone: phone.trim() });
-    }
-
-    if (conditions.length === 0) return false;
-
     try {
-      // Check email
       if (email.trim()) {
-        const { data: emailMatch } = await supabase
-          .from('leads')
-          .select('id, name')
-          .eq('email', email.trim().toLowerCase())
+        const { data } = await supabase
+          .from("leads")
+          .select("id, name")
+          .eq("email", email.trim().toLowerCase())
           .maybeSingle();
 
-        if (emailMatch) {
-          setDuplicateWarning(`Já existe um lead com este email: ${emailMatch.name}`);
+        if (data) {
+          setDuplicateWarning(`Já existe um lead com este email: ${data.name}`);
           return true;
         }
       }
 
-      // Check phone
-      if (phone.trim()) {
-        const { data: phoneMatch } = await supabase
-          .from('leads')
-          .select('id, name')
-          .eq('phone', phone.trim())
-          .maybeSingle();
+      if (whatsapp.trim()) {
+        const { data } = await supabase.from("leads").select("id, name").eq("whatsapp", whatsapp.trim()).maybeSingle();
 
-        if (phoneMatch) {
-          setDuplicateWarning(`Já existe um lead com este telefone: ${phoneMatch.name}`);
+        if (data) {
+          setDuplicateWarning(`Já existe um lead com este WhatsApp: ${data.name}`);
           return true;
         }
       }
 
       return false;
     } catch (err) {
-      console.error('Error checking duplicate:', err);
+      console.error("Error checking duplicate:", err);
       return false;
     }
   };
 
   const handleSubmit = async () => {
-    // Validation
     if (!name.trim()) {
-      toast.error('Nome é obrigatório');
+      toast.error("Nome é obrigatório");
       return;
     }
 
-    if (!email.trim() && !phone.trim()) {
-      toast.error('Informe pelo menos um contato (email ou telefone)');
+    if (!email.trim() && !whatsapp.trim()) {
+      toast.error("Informe pelo menos um contato (email ou WhatsApp)");
       return;
     }
 
-    // Email validation
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      toast.error('Email inválido');
+      toast.error("Email inválido");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Check for duplicates
       const isDuplicate = await checkDuplicate();
       if (isDuplicate) {
         setLoading(false);
         return;
       }
 
-      // Create lead
       const { data, error } = await supabase
-        .from('leads')
+        .from("leads")
         .insert({
           name: name.trim(),
           email: email.trim().toLowerCase() || null,
-          phone: phone.trim() || null,
+          whatsapp: whatsapp.trim() || null,
           source,
           stage,
           notes: notes.trim() || null,
@@ -152,40 +131,42 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
         .single();
 
       if (error) {
-        console.error('Error creating lead:', error);
+        console.error("Error creating lead:", error);
         toast.error(`Erro ao criar lead: ${error.message}`);
         return;
       }
 
-      // Log event if events table exists
+      // Log event (opcional)
       try {
-        await supabase.from('events').insert({
+        await supabase.from("events").insert({
           lead_id: data.id,
-          type: 'form_submitted',
+          type: "form_submitted",
           payload: { source, manual: true },
         });
-      } catch (eventErr) {
-        // Silently fail - events table may not exist
-        console.log('Could not log event:', eventErr);
+      } catch {
+        // ignora
       }
 
-      toast.success('Lead criado com sucesso!');
+      toast.success("Lead criado com sucesso!");
       resetForm();
       onOpenChange(false);
       onSuccess?.();
     } catch (err) {
-      console.error('Error in handleSubmit:', err);
-      toast.error('Erro ao criar lead');
+      console.error("Error in handleSubmit:", err);
+      toast.error("Erro ao criar lead");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) resetForm();
-      onOpenChange(isOpen);
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) resetForm();
+        onOpenChange(isOpen);
+      }}
+    >
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -227,12 +208,12 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
+              <Label htmlFor="whatsapp">WhatsApp</Label>
               <Input
-                id="phone"
+                id="whatsapp"
                 placeholder="11999999999"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={whatsapp}
+                onChange={(e) => setWhatsapp(e.target.value)}
                 disabled={loading}
               />
             </div>
@@ -240,7 +221,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="source">Origem</Label>
+              <Label>Origem</Label>
               <Select value={source} onValueChange={setSource} disabled={loading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecionar origem" />
@@ -256,7 +237,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="stage">Estágio Inicial</Label>
+              <Label>Estágio Inicial</Label>
               <Select value={stage} onValueChange={(v) => setStage(v as LeadStage)} disabled={loading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecionar estágio" />
@@ -265,7 +246,12 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
                   {CORE_STAGES.map((s) => (
                     <SelectItem key={s} value={s}>
                       <div className="flex items-center gap-2">
-                        <span className={cn('w-2 h-2 rounded-full', `bg-[hsl(var(--stage-${s.replace('_', '-').replace('subscribed_', '')}))]`)}></span>
+                        <span
+                          className={cn(
+                            "w-2 h-2 rounded-full",
+                            `bg-[hsl(var(--stage-${s.replace("_", "-").replace("subscribed_", "")}))]`,
+                          )}
+                        />
                         {STAGE_CONFIG[s].label}
                       </div>
                     </SelectItem>
