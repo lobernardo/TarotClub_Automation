@@ -1,12 +1,24 @@
 /**
- * Hook for lead actions (stage change, etc.)
+ * Hook for lead actions (stage change, update, delete)
  * Uses existing Supabase tables
+ * 
+ * IMPORTANT:
+ * - deleteLead cancels queue items but does NOT trigger automations
+ * - updateLead only updates basic fields (name, email, phone, notes)
  */
 
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { LeadStage } from '@/types/database';
+import { Lead, LeadStage } from '@/types/database';
 import { toast } from 'sonner';
+
+// Type for updateable lead fields
+export interface UpdateLeadData {
+  name?: string;
+  email?: string;
+  phone?: string;
+  notes?: string | null;
+}
 
 export function useLeadActions(onUpdate?: () => void) {
   // Change lead stage
@@ -46,7 +58,7 @@ export function useLeadActions(onUpdate?: () => void) {
       try {
         await supabase.from('events').insert({
           lead_id: leadId,
-          type: 'stage_changed' as any, // May not be in enum, will fail silently
+          type: 'stage_changed' as any,
           payload: {
             from: oldStage,
             to: newStage,
@@ -84,7 +96,93 @@ export function useLeadActions(onUpdate?: () => void) {
     }
   }, [onUpdate]);
 
+  /**
+   * Update lead basic fields
+   * Does NOT trigger any automations
+   */
+  const updateLead = useCallback(async (leadId: string, data: UpdateLeadData): Promise<boolean> => {
+    try {
+      const updateData: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
+
+      // Only include provided fields
+      if (data.name !== undefined) updateData.name = data.name.trim();
+      if (data.email !== undefined) updateData.email = data.email.trim().toLowerCase();
+      if (data.phone !== undefined) updateData.phone = data.phone.trim();
+      if (data.notes !== undefined) updateData.notes = data.notes;
+
+      const { error: updateError } = await supabase
+        .from('leads')
+        .update(updateData)
+        .eq('id', leadId);
+
+      if (updateError) {
+        console.error('Error updating lead:', updateError);
+        toast.error(`Erro ao atualizar lead: ${updateError.message}`);
+        return false;
+      }
+
+      toast.success('Lead atualizado com sucesso');
+      onUpdate?.();
+      return true;
+    } catch (err) {
+      console.error('Error in updateLead:', err);
+      toast.error('Erro ao atualizar lead');
+      return false;
+    }
+  }, [onUpdate]);
+
+  /**
+   * Delete lead (hard delete)
+   * Cancels all pending queue items but does NOT trigger automations
+   * IMPORTANT: This is a destructive operation
+   */
+  const deleteLead = useCallback(async (leadId: string): Promise<boolean> => {
+    try {
+      // 1. Cancel all pending queue items (without triggering automations)
+      // This is a silent cleanup, not an automation trigger
+      try {
+        await supabase
+          .from('message_queue')
+          .update({
+            status: 'canceled',
+            cancel_reason: 'lead_deleted',
+            canceled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('lead_id', leadId)
+          .eq('status', 'scheduled');
+      } catch (queueErr) {
+        console.log('Could not cancel queue items:', queueErr);
+        // Continue with deletion even if queue cancel fails
+      }
+
+      // 2. Delete the lead
+      const { error: deleteError } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', leadId);
+
+      if (deleteError) {
+        console.error('Error deleting lead:', deleteError);
+        toast.error(`Erro ao excluir lead: ${deleteError.message}`);
+        return false;
+      }
+
+      toast.success('Lead excluído com sucesso');
+      onUpdate?.();
+      return true;
+    } catch (err) {
+      console.error('Error in deleteLead:', err);
+      toast.error('Erro ao excluir lead');
+      return false;
+    }
+  }, [onUpdate]);
+
   return {
     changeStage,
+    updateLead,
+    deleteLead,
   };
 }
