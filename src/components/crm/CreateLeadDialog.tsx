@@ -20,7 +20,7 @@ import { LeadStage, STAGE_CONFIG, CORE_STAGES } from "@/types/database";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, AlertTriangle, UserPlus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, normalizeWhatsapp } from "@/lib/utils";
 
 interface CreateLeadDialogProps {
   open: boolean;
@@ -89,15 +89,16 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
       }
 
       // Check whatsapp
-      if (whatsapp.trim()) {
+      const normalizedWa = normalizeWhatsapp(whatsapp);
+      if (normalizedWa) {
         const { data: whatsappMatch } = await supabase
           .from("leads")
           .select("id, name")
-          .eq("whatsapp", whatsapp.trim())
+          .eq("whatsapp", normalizedWa)
           .maybeSingle();
 
         if (whatsappMatch) {
-          setDuplicateWarning(`Já existe um lead com este telefone: ${whatsappMatch.name}`);
+          setDuplicateWarning(`Já existe um lead com este WhatsApp: ${whatsappMatch.name}`);
           return true;
         }
       }
@@ -117,7 +118,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
     }
 
     if (!email.trim() && !whatsapp.trim()) {
-      toast.error("Informe pelo menos um contato (email ou telefone)");
+      toast.error("Informe pelo menos um contato (email ou WhatsApp)");
       return;
     }
 
@@ -137,13 +138,13 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
         return;
       }
 
-      // Create lead
+      // Create lead (normalize whatsapp before insert)
       const { data, error } = await supabase
         .from("leads")
         .insert({
           name: name.trim(),
           email: email.trim().toLowerCase() || null,
-          whatsapp: whatsapp.trim() || null,
+          whatsapp: normalizeWhatsapp(whatsapp),
           source,
           stage,
           notes: notes.trim() || null,
@@ -230,7 +231,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="whatsapp">Telefone</Label>
+              <Label htmlFor="whatsapp">WhatsApp</Label>
               <Input
                 id="whatsapp"
                 placeholder="11999999999"

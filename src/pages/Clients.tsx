@@ -7,7 +7,7 @@ import { Lead, LeadStage, STAGE_CONFIG } from "@/types/database";
 import { LeadDetailSheet } from "@/components/crm/LeadDetailSheet";
 import { StageBadge } from "@/components/ui/StageBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, UserCheck, Mail, Phone, Calendar, List, LayoutGrid, Loader2 } from "lucide-react";
+import { Search, UserCheck, Mail, MessageSquare, Calendar, List, LayoutGrid, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { format, formatDistanceToNow } from "date-fns";
@@ -90,7 +90,7 @@ export default function Clients() {
         </div>
         {client.whatsapp && (
           <div className="flex items-center gap-2 text-muted-foreground">
-            <Phone className="h-4 w-4" />
+            <MessageSquare className="h-4 w-4" />
             <span>{client.whatsapp}</span>
           </div>
         )}

@@ -22,7 +22,7 @@ import { EditLeadDialog } from "./EditLeadDialog";
 import { DeleteLeadDialog } from "./DeleteLeadDialog";
 import {
   Mail,
-  Phone,
+  MessageSquare,
   Calendar,
   MapPin,
   Clock,
@@ -193,7 +193,7 @@ export function LeadDetailSheet({
 
                 {lead.whatsapp && (
                   <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
                     <span className="text-foreground">{lead.whatsapp}</span>
                   </div>
                 )}

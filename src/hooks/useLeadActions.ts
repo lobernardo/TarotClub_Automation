@@ -11,6 +11,7 @@ import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Lead, LeadStage } from "@/types/database";
 import { toast } from "sonner";
+import { normalizeWhatsapp } from "@/lib/utils";
 
 // Type for updateable lead fields
 export interface UpdateLeadData {
@@ -113,7 +114,7 @@ export function useLeadActions(onUpdate?: () => void) {
         // Only include provided fields
         if (data.name !== undefined) updateData.name = data.name.trim();
         if (data.email !== undefined) updateData.email = data.email.trim().toLowerCase();
-        if (data.whatsapp !== undefined) updateData.whatsapp = data.whatsapp.trim();
+        if (data.whatsapp !== undefined) updateData.whatsapp = normalizeWhatsapp(data.whatsapp);
         if (data.notes !== undefined) updateData.notes = data.notes;
 
         const { error: updateError } = await supabase.from("leads").update(updateData).eq("id", leadId);
