@@ -65,6 +65,24 @@ export default function CRM() {
     refetchLeads();
   };
 
+  const handleLeadUpdated = () => {
+    refetchLeads();
+    // Refetch the selected lead data to show updates
+    if (selectedLead) {
+      setTimeout(() => {
+        const updatedLead = leads.find(l => l.id === selectedLead.id);
+        if (updatedLead) {
+          setSelectedLead(updatedLead);
+        }
+      }, 100);
+    }
+  };
+
+  const handleLeadDeleted = () => {
+    setSelectedLead(null);
+    refetchLeads();
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -135,6 +153,8 @@ export default function CRM() {
           subscription={subscription}
           loading={leadDataLoading}
           onStageChange={handleStageChange}
+          onLeadUpdated={handleLeadUpdated}
+          onLeadDeleted={handleLeadDeleted}
         />
       </div>
     </AppLayout>

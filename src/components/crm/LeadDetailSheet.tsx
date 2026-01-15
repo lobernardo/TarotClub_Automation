@@ -4,8 +4,10 @@
  * - Lead data (name, email, phone, source, stage, notes)
  * - Interaction history (events, messages, queue items)
  * - Stage change action
+ * - Edit and delete actions
  */
 
+import { useState } from 'react';
 import { Lead, LeadStage, STAGE_CONFIG, CORE_STAGES, Event, Message } from '@/types/database';
 import { QueuedMessage } from '@/types/messageQueue';
 import { Subscription } from '@/types/database';
@@ -16,10 +18,12 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { EditLeadDialog } from './EditLeadDialog';
+import { DeleteLeadDialog } from './DeleteLeadDialog';
 import { 
   Mail, Phone, Calendar, MapPin, Clock, MessageCircle, 
   ArrowRight, FileText, CreditCard, Bell, User, ArrowRightLeft,
-  Send, CheckCircle, XCircle, AlertCircle
+  Send, CheckCircle, XCircle, AlertCircle, Pencil, Trash2
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -35,6 +39,8 @@ interface LeadDetailSheetProps {
   subscription: Subscription | null;
   loading: boolean;
   onStageChange?: (leadId: string, newStage: LeadStage) => Promise<void>;
+  onLeadUpdated?: () => void;
+  onLeadDeleted?: () => void;
 }
 
 // Event type labels
@@ -74,8 +80,12 @@ export function LeadDetailSheet({
   queueItems,
   subscription,
   loading,
-  onStageChange
+  onStageChange,
+  onLeadUpdated,
+  onLeadDeleted
 }: LeadDetailSheetProps) {
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   if (!lead) return null;
 
   const createdAt = new Date(lead.created_at);
@@ -106,32 +116,65 @@ export function LeadDetailSheet({
     }
   };
 
+  const handleEditSuccess = () => {
+    setEditDialogOpen(false);
+    onLeadUpdated?.();
+  };
+
+  const handleDeleteSuccess = () => {
+    setDeleteDialogOpen(false);
+    onOpenChange(false); // Close the sheet
+    onLeadDeleted?.();
+  };
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-        <SheetHeader className="space-y-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <SheetTitle className="text-2xl">{lead.name}</SheetTitle>
-              <div className="flex items-center gap-2 mt-2">
-                <StageBadge stage={lead.stage} />
-                {lead.silenced_until && new Date(lead.silenced_until) > new Date() && (
-                  <Badge variant="outline" className="text-amber-400 border-amber-400/30 bg-amber-400/10">
-                    🔇 Silenciado
-                  </Badge>
-                )}
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader className="space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <SheetTitle className="text-2xl">{lead.name}</SheetTitle>
+                <div className="flex items-center gap-2 mt-2">
+                  <StageBadge stage={lead.stage} />
+                  {lead.silenced_until && new Date(lead.silenced_until) > new Date() && (
+                    <Badge variant="outline" className="text-amber-400 border-amber-400/30 bg-amber-400/10">
+                      🔇 Silenciado
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              {/* Action buttons */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setEditDialogOpen(true)}
+                  title="Editar lead"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  title="Excluir lead"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-          </div>
-        </SheetHeader>
+          </SheetHeader>
 
-        <div className="mt-6 space-y-6">
-          {/* Lead Data Section */}
-          <div className="glass-card rounded-lg p-4 space-y-4">
-            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Dados do Lead
-            </h3>
+          <div className="mt-6 space-y-6">
+            {/* Lead Data Section */}
+            <div className="glass-card rounded-lg p-4 space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Dados do Lead
+              </h3>
+
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center gap-2 text-sm">
@@ -392,5 +435,22 @@ export function LeadDetailSheet({
         </div>
       </SheetContent>
     </Sheet>
+
+    {/* Edit Lead Dialog */}
+    <EditLeadDialog
+      lead={lead}
+      open={editDialogOpen}
+      onOpenChange={setEditDialogOpen}
+      onSuccess={handleEditSuccess}
+    />
+
+    {/* Delete Lead Confirmation Dialog */}
+    <DeleteLeadDialog
+      lead={lead}
+      open={deleteDialogOpen}
+      onOpenChange={setDeleteDialogOpen}
+      onSuccess={handleDeleteSuccess}
+    />
+  </>
   );
 }
