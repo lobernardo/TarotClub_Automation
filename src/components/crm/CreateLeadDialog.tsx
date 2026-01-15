@@ -1,7 +1,7 @@
 /**
  * Create Lead Dialog
  * Allows manual lead creation with:
- * - Name, email, phone (required: name + at least one contact)
+ * - Name, email, whatsapp (required: name + at least one contact)
  * - Origin selection
  * - Initial stage selection
  * - Notes
@@ -232,7 +232,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
             <div className="space-y-2">
               <Label htmlFor="whatsapp">Telefone</Label>
               <Input
-                id="phone"
+                id="whatsapp"
                 placeholder="11999999999"
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
