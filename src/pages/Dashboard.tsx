@@ -1,19 +1,12 @@
-import { useEffect, useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { MetricCard } from '@/components/dashboard/MetricCard';
-import { STAGE_CONFIG, LeadStage, Lead, Event } from '@/types/database';
-import { supabase } from '@/integrations/supabase/client';
-import {
-  Users,
-  UserCheck,
-  TrendingUp,
-  MessageSquare,
-  Clock,
-  Activity
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { StageBadge } from '@/components/ui/StageBadge';
+import { useEffect, useState } from "react";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { MetricCard } from "@/components/dashboard/MetricCard";
+import { STAGE_CONFIG, LeadStage, Lead, Event } from "@/types/database";
+import { supabase } from "@/integrations/supabase/client";
+import { Users, UserCheck, TrendingUp, MessageSquare, Clock, Activity } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { StageBadge } from "@/components/ui/StageBadge";
 
 export default function Dashboard() {
   const [totalLeads, setTotalLeads] = useState<number>(0);
@@ -21,34 +14,36 @@ export default function Dashboard() {
   const [pendingFollowUps, setPendingFollowUps] = useState<number>(0);
   const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
   const [recentEvents, setRecentEvents] = useState<Event[]>([]);
-  const [funnelData, setFunnelData] = useState<{ stage: LeadStage; count: number; config: typeof STAGE_CONFIG[LeadStage] }[]>([]);
+  const [funnelData, setFunnelData] = useState<
+    { stage: LeadStage; count: number; config: (typeof STAGE_CONFIG)[LeadStage] }[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchDashboardData() {
       setLoading(true);
-      
+
       // Fetch all leads
       const { data: leadsData, count: totalCount } = await supabase
-        .from('leads')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
+        .from("leads")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
         .limit(5);
-      
+
       if (totalCount !== null) {
         setTotalLeads(totalCount);
       }
-      
+
       if (leadsData) {
         setRecentLeads(leadsData as Lead[]);
       }
 
       // Active clients (stage = subscribed_active)
       const { count: activeCount } = await supabase
-        .from('leads')
-        .select('*', { count: 'exact', head: true })
-        .eq('stage', 'subscribed_active');
-      
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("stage", "subscribed_active");
+
       if (activeCount !== null) {
         setActiveClients(activeCount);
       }
@@ -56,59 +51,54 @@ export default function Dashboard() {
       // Pending follow-ups (message_queue with status = scheduled)
       try {
         const { count: pendingCount } = await supabase
-          .from('message_queue')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'scheduled');
-        
+          .from("message_queue")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "scheduled");
+
         if (pendingCount !== null) {
           setPendingFollowUps(pendingCount);
         }
       } catch (err) {
-        console.log('Could not fetch pending follow-ups:', err);
+        console.log("Could not fetch pending follow-ups:", err);
       }
 
       // Recent events
       try {
         const { data: eventsData } = await supabase
-          .from('events')
-          .select('*')
-          .order('created_at', { ascending: false })
+          .from("events")
+          .select("*")
+          .order("created_at", { ascending: false })
           .limit(5);
-        
+
         if (eventsData) {
           setRecentEvents(eventsData as Event[]);
         }
       } catch (err) {
-        console.log('Could not fetch events:', err);
+        console.log("Could not fetch events:", err);
       }
 
       // Funnel data - count leads by stage
-      const funnelStages: LeadStage[] = ['captured_form', 'checkout_started', 'payment_pending', 'subscribed_active'];
+      const funnelStages: LeadStage[] = ["captured_form", "checkout_started", "payment_pending", "subscribed_active"];
       const funnelResults = await Promise.all(
         funnelStages.map(async (stage) => {
-          const { count } = await supabase
-            .from('leads')
-            .select('*', { count: 'exact', head: true })
-            .eq('stage', stage);
+          const { count } = await supabase.from("leads").select("*", { count: "exact", head: true }).eq("stage", stage);
           return {
             stage,
             count: count || 0,
-            config: STAGE_CONFIG[stage]
+            config: STAGE_CONFIG[stage],
           };
-        })
+        }),
       );
       setFunnelData(funnelResults);
-      
+
       setLoading(false);
     }
-    
+
     fetchDashboardData();
   }, []);
 
   // Calculate conversion rate
-  const conversionRate = totalLeads > 0 
-    ? Math.round((activeClients / totalLeads) * 100) 
-    : 0;
+  const conversionRate = totalLeads > 0 ? Math.round((activeClients / totalLeads) * 100) : 0;
 
   return (
     <AppLayout>
@@ -116,18 +106,12 @@ export default function Dashboard() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Visão geral do Clube do Tarot Veranah Alma
-          </p>
+          <p className="text-muted-foreground mt-1">Visão geral do Clube do Tarot Veranah Alma</p>
         </div>
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          <MetricCard
-            title="Total de Leads"
-            value={totalLeads}
-            icon={<Users className="h-6 w-6 text-primary" />}
-          />
+          <MetricCard title="Total de Leads" value={totalLeads} icon={<Users className="h-6 w-6 text-primary" />} />
           <MetricCard
             title="Clientes Ativos"
             value={activeClients}
@@ -154,15 +138,13 @@ export default function Dashboard() {
               Funil de Conversão
             </h2>
             {funnelData.length === 0 && !loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhum lead no funil
-              </div>
+              <div className="text-center py-8 text-muted-foreground">Nenhum lead no funil</div>
             ) : (
               <div className="space-y-4">
                 {funnelData.map((item, index) => {
-                  const maxCount = Math.max(...funnelData.map(f => f.count));
+                  const maxCount = Math.max(...funnelData.map((f) => f.count));
                   const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-                  
+
                   return (
                     <div key={item.stage} className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -192,9 +174,7 @@ export default function Dashboard() {
               Atividade Recente
             </h2>
             {recentEvents.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                Nenhuma atividade recente
-              </div>
+              <div className="text-center py-8 text-muted-foreground text-sm">Nenhuma atividade recente</div>
             ) : (
               <div className="space-y-4">
                 {recentEvents.map((event) => (
@@ -205,14 +185,12 @@ export default function Dashboard() {
                     <div className="w-2 h-2 rounded-full bg-primary mt-2 animate-pulse-glow" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-foreground">
-                        <span className="text-muted-foreground">
-                          {event.type.replace(/_/g, ' ')}
-                        </span>
+                        <span className="text-muted-foreground">{event.type.replace(/_/g, " ")}</span>
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {formatDistanceToNow(new Date(event.created_at), {
                           addSuffix: true,
-                          locale: ptBR
+                          locale: ptBR,
                         })}
                       </p>
                     </div>
@@ -230,17 +208,12 @@ export default function Dashboard() {
               <Users className="h-5 w-5 text-primary" />
               Leads Recentes
             </h2>
-            <a
-              href="/crm"
-              className="text-sm text-primary hover:text-primary/80 transition-colors"
-            >
+            <a href="/crm" className="text-sm text-primary hover:text-primary/80 transition-colors">
               Ver todos →
             </a>
           </div>
           {recentLeads.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Nenhum lead encontrado
-            </div>
+            <div className="text-center py-8 text-muted-foreground">Nenhum lead encontrado</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -263,14 +236,14 @@ export default function Dashboard() {
                         <span className="font-medium text-foreground">{lead.name}</span>
                       </td>
                       <td className="py-3 px-4 text-muted-foreground">{lead.email}</td>
-                      <td className="py-3 px-4 text-muted-foreground">{lead.phone}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{lead.whatsapp}</td>
                       <td className="py-3 px-4">
                         <StageBadge stage={lead.stage} />
                       </td>
                       <td className="py-3 px-4 text-muted-foreground text-sm">
                         {formatDistanceToNow(new Date(lead.created_at), {
                           addSuffix: true,
-                          locale: ptBR
+                          locale: ptBR,
                         })}
                       </td>
                     </tr>
