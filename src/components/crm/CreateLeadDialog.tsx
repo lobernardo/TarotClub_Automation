@@ -1,7 +1,7 @@
 /**
  * Create Lead Dialog
  * Allows manual lead creation with:
- * - Name, email, whatsapp (required: name + at least one contact)
+ * - Name, email, phone (required: name + at least one contact)
  * - Origin selection
  * - Initial stage selection
  * - Notes
@@ -62,25 +62,42 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
   const checkDuplicate = async (): Promise<boolean> => {
     setDuplicateWarning(null);
 
+    // Build OR conditions for duplicate check
+    const conditions = [];
+    if (email.trim()) {
+      conditions.push({ email: email.trim().toLowerCase() });
+    }
+    if (whatsapp.trim()) {
+      conditions.push({ whatsapp: whatsapp.trim() });
+    }
+
+    if (conditions.length === 0) return false;
+
     try {
+      // Check email
       if (email.trim()) {
-        const { data } = await supabase
+        const { data: emailMatch } = await supabase
           .from("leads")
           .select("id, name")
           .eq("email", email.trim().toLowerCase())
           .maybeSingle();
 
-        if (data) {
-          setDuplicateWarning(`Já existe um lead com este email: ${data.name}`);
+        if (emailMatch) {
+          setDuplicateWarning(`Já existe um lead com este email: ${emailMatch.name}`);
           return true;
         }
       }
 
+      // Check whatsapp
       if (whatsapp.trim()) {
-        const { data } = await supabase.from("leads").select("id, name").eq("whatsapp", whatsapp.trim()).maybeSingle();
+        const { data: whatsappMatch } = await supabase
+          .from("leads")
+          .select("id, name")
+          .eq("whatsapp", whatsapp.trim())
+          .maybeSingle();
 
-        if (data) {
-          setDuplicateWarning(`Já existe um lead com este WhatsApp: ${data.name}`);
+        if (whatsappMatch) {
+          setDuplicateWarning(`Já existe um lead com este telefone: ${whatsappMatch.name}`);
           return true;
         }
       }
@@ -93,16 +110,18 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
   };
 
   const handleSubmit = async () => {
+    // Validation
     if (!name.trim()) {
       toast.error("Nome é obrigatório");
       return;
     }
 
     if (!email.trim() && !whatsapp.trim()) {
-      toast.error("Informe pelo menos um contato (email ou WhatsApp)");
+      toast.error("Informe pelo menos um contato (email ou telefone)");
       return;
     }
 
+    // Email validation
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       toast.error("Email inválido");
       return;
@@ -111,12 +130,14 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
     setLoading(true);
 
     try {
+      // Check for duplicates
       const isDuplicate = await checkDuplicate();
       if (isDuplicate) {
         setLoading(false);
         return;
       }
 
+      // Create lead
       const { data, error } = await supabase
         .from("leads")
         .insert({
@@ -136,15 +157,16 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
         return;
       }
 
-      // Log event (opcional)
+      // Log event if events table exists
       try {
         await supabase.from("events").insert({
           lead_id: data.id,
           type: "form_submitted",
           payload: { source, manual: true },
         });
-      } catch {
-        // ignora
+      } catch (eventErr) {
+        // Silently fail - events table may not exist
+        console.log("Could not log event:", eventErr);
       }
 
       toast.success("Lead criado com sucesso!");
@@ -208,9 +230,9 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="whatsapp">WhatsApp</Label>
+              <Label htmlFor="whatsapp">Telefone</Label>
               <Input
-                id="whatsapp"
+                id="phone"
                 placeholder="11999999999"
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
@@ -221,7 +243,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Origem</Label>
+              <Label htmlFor="source">Origem</Label>
               <Select value={source} onValueChange={setSource} disabled={loading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecionar origem" />
@@ -237,7 +259,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
             </div>
 
             <div className="space-y-2">
-              <Label>Estágio Inicial</Label>
+              <Label htmlFor="stage">Estágio Inicial</Label>
               <Select value={stage} onValueChange={(v) => setStage(v as LeadStage)} disabled={loading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecionar estágio" />
@@ -251,7 +273,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
                             "w-2 h-2 rounded-full",
                             `bg-[hsl(var(--stage-${s.replace("_", "-").replace("subscribed_", "")}))]`,
                           )}
-                        />
+                        ></span>
                         {STAGE_CONFIG[s].label}
                       </div>
                     </SelectItem>
