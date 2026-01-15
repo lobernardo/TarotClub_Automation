@@ -21,12 +21,18 @@ export default function CRM() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const { leads, leadsByStage, refetch: refetchLeads } = useLeads();
-  const { events, messages, queueItems, subscription, loading: leadDataLoading } = useLeadData(selectedLead?.id || null);
+  const {
+    events,
+    messages,
+    queueItems,
+    subscription,
+    loading: leadDataLoading,
+  } = useLeadData(selectedLead?.id || null);
   const { changeStage } = useLeadActions(() => {
     refetchLeads();
     // Refetch the selected lead data
     if (selectedLead) {
-      const updatedLead = leads.find(l => l.id === selectedLead.id);
+      const updatedLead = leads.find((l) => l.id === selectedLead.id);
       if (updatedLead) {
         setSelectedLead(updatedLead);
       }
@@ -40,7 +46,7 @@ export default function CRM() {
         (lead) =>
           lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          lead.phone.includes(searchQuery),
+          lead.whatsapp.includes(searchQuery),
       ),
     ]),
   ) as Record<LeadStage, Lead[]>;
@@ -70,7 +76,7 @@ export default function CRM() {
     // Refetch the selected lead data to show updates
     if (selectedLead) {
       setTimeout(() => {
-        const updatedLead = leads.find(l => l.id === selectedLead.id);
+        const updatedLead = leads.find((l) => l.id === selectedLead.id);
         if (updatedLead) {
           setSelectedLead(updatedLead);
         }
@@ -137,11 +143,7 @@ export default function CRM() {
 
         <StageManagementDialog open={stageDialogOpen} onOpenChange={setStageDialogOpen} />
 
-        <CreateLeadDialog 
-          open={createDialogOpen} 
-          onOpenChange={setCreateDialogOpen}
-          onSuccess={handleLeadCreated}
-        />
+        <CreateLeadDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} onSuccess={handleLeadCreated} />
 
         <LeadDetailSheet
           lead={selectedLead}
