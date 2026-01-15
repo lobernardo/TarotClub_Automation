@@ -4,7 +4,7 @@
  * Allows editing basic lead fields:
  * - name
  * - email
- * - phone (whatsapp)
+ * - whatsapp
  * - notes
  *
  * Does NOT trigger any automations
@@ -46,29 +46,25 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSuccess }: EditLead
   // Sync form with lead data when dialog opens
   useEffect(() => {
     if (lead && open) {
-      setName(lead.name || "");
-      setEmail(lead.email || "");
-      setWhatsapp(lead.whatsapp || "");
-      setNotes(lead.notes || "");
+      setName(lead.name ?? "");
+      setEmail(lead.email ?? "");
+      setWhatsapp(lead.whatsapp ?? "");
+      setNotes(lead.notes ?? "");
     }
   }, [lead, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!lead) return;
 
-    // Validation
-    if (!name.trim()) {
-      return;
-    }
+    if (!name.trim()) return;
 
     setLoading(true);
 
     const updateData: UpdateLeadData = {
       name: name.trim(),
-      email: email.trim(),
-      whatsapp: whatsapp.trim(),
+      email: email.trim() ? email.trim().toLowerCase() : null,
+      whatsapp: whatsapp.trim() || null,
       notes: notes.trim() || null,
     };
 
@@ -123,7 +119,7 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSuccess }: EditLead
               type="tel"
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
-              placeholder="+55 11 99999-9999"
+              placeholder="11999999999"
               disabled={loading}
             />
           </div>
