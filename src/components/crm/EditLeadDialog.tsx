@@ -1,18 +1,18 @@
 /**
  * Edit Lead Dialog
- * 
+ *
  * Allows editing basic lead fields:
  * - name
  * - email
  * - phone (whatsapp)
  * - notes
- * 
+ *
  * Does NOT trigger any automations
  */
 
-import { useState, useEffect } from 'react';
-import { Lead } from '@/types/database';
-import { useLeadActions, UpdateLeadData } from '@/hooks/useLeadActions';
+import { useState, useEffect } from "react";
+import { Lead } from "@/types/database";
+import { useLeadActions, UpdateLeadData } from "@/hooks/useLeadActions";
 import {
   Dialog,
   DialogContent,
@@ -20,12 +20,12 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Save, X } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Save, X } from "lucide-react";
 
 interface EditLeadDialogProps {
   lead: Lead | null;
@@ -34,16 +34,11 @@ interface EditLeadDialogProps {
   onSuccess?: () => void;
 }
 
-export function EditLeadDialog({
-  lead,
-  open,
-  onOpenChange,
-  onSuccess
-}: EditLeadDialogProps) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [notes, setNotes] = useState('');
+export function EditLeadDialog({ lead, open, onOpenChange, onSuccess }: EditLeadDialogProps) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { updateLead } = useLeadActions(onSuccess);
@@ -51,10 +46,10 @@ export function EditLeadDialog({
   // Sync form with lead data when dialog opens
   useEffect(() => {
     if (lead && open) {
-      setName(lead.name || '');
-      setEmail(lead.email || '');
-      setPhone(lead.phone || '');
-      setNotes(lead.notes || '');
+      setName(lead.name || "");
+      setEmail(lead.email || "");
+      setWhatsapp(lead.whatsapp || "");
+      setNotes(lead.notes || "");
     }
   }, [lead, open]);
 
@@ -73,7 +68,7 @@ export function EditLeadDialog({
     const updateData: UpdateLeadData = {
       name: name.trim(),
       email: email.trim(),
-      phone: phone.trim(),
+      whatsapp: whatsapp.trim(),
       notes: notes.trim() || null,
     };
 
@@ -93,9 +88,7 @@ export function EditLeadDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Lead</DialogTitle>
-          <DialogDescription>
-            Atualize os dados básicos do lead. Mudanças não disparam automações.
-          </DialogDescription>
+          <DialogDescription>Atualize os dados básicos do lead. Mudanças não disparam automações.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -124,12 +117,12 @@ export function EditLeadDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-phone">WhatsApp</Label>
+            <Label htmlFor="edit-whatsapp">WhatsApp</Label>
             <Input
-              id="edit-phone"
+              id="edit-whatsapp"
               type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
               placeholder="+55 11 99999-9999"
               disabled={loading}
             />
@@ -148,21 +141,12 @@ export function EditLeadDialog({
           </div>
 
           <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
               <X className="h-4 w-4 mr-2" />
               Cancelar
             </Button>
             <Button type="submit" disabled={loading || !name.trim()}>
-              {loading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
+              {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
               Salvar
             </Button>
           </DialogFooter>
