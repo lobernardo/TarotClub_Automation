@@ -1,9 +1,9 @@
-import { Lead } from '@/types/database';
-import { StageBadge } from '@/components/ui/StageBadge';
-import { Clock, MessageCircle, Phone, GripVertical } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { Lead } from "@/types/database";
+import { StageBadge } from "@/components/ui/StageBadge";
+import { Clock, MessageCircle, Phone, GripVertical } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface LeadCardProps {
   lead: Lead;
@@ -14,19 +14,19 @@ interface LeadCardProps {
 export function LeadCard({ lead, onClick, isDragging }: LeadCardProps) {
   const timeAgo = formatDistanceToNow(new Date(lead.created_at), {
     addSuffix: true,
-    locale: ptBR
+    locale: ptBR,
   });
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    e.dataTransfer.setData('application/json', JSON.stringify({ leadId: lead.id, fromStage: lead.stage }));
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData("application/json", JSON.stringify({ leadId: lead.id, fromStage: lead.stage }));
+    e.dataTransfer.effectAllowed = "move";
   };
 
   return (
-    <div 
+    <div
       className={cn(
         "lead-card animate-slide-up cursor-grab active:cursor-grabbing transition-all",
-        isDragging && "opacity-50 scale-95"
+        isDragging && "opacity-50 scale-95",
       )}
       onClick={onClick}
       draggable
@@ -38,9 +38,7 @@ export function LeadCard({ lead, onClick, isDragging }: LeadCardProps) {
             <GripVertical className="h-4 w-4 text-muted-foreground/50 mt-0.5 flex-shrink-0" />
             <div>
               <h4 className="font-medium text-foreground">{lead.name}</h4>
-              <p className="text-sm text-muted-foreground truncate max-w-[160px]">
-                {lead.email}
-              </p>
+              <p className="text-sm text-muted-foreground truncate max-w-[160px]">{lead.email}</p>
             </div>
           </div>
           <StageBadge stage={lead.stage} />
@@ -51,10 +49,10 @@ export function LeadCard({ lead, onClick, isDragging }: LeadCardProps) {
             <Clock className="h-3.5 w-3.5" />
             <span>{timeAgo}</span>
           </div>
-          {lead.phone && (
+          {lead.whatsapp && (
             <div className="flex items-center gap-1">
               <Phone className="h-3.5 w-3.5" />
-              <span>{lead.phone}</span>
+              <span>{lead.whatsapp}</span>
             </div>
           )}
         </div>
@@ -69,9 +67,7 @@ export function LeadCard({ lead, onClick, isDragging }: LeadCardProps) {
         )}
 
         {lead.silenced_until && new Date(lead.silenced_until) > new Date() && (
-          <div className="text-xs text-amber-400 bg-amber-400/10 rounded px-2 py-1 inline-block">
-            🔇 Silenciado
-          </div>
+          <div className="text-xs text-amber-400 bg-amber-400/10 rounded px-2 py-1 inline-block">🔇 Silenciado</div>
         )}
       </div>
     </div>
