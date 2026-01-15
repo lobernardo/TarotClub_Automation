@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { normalizeWhatsapp } from "@/lib/utils";
 import { Lead } from "@/types/database";
 import { useLeadActions, UpdateLeadData } from "@/hooks/useLeadActions";
 import {
@@ -64,7 +65,7 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSuccess }: EditLead
     const updateData: UpdateLeadData = {
       name: name.trim(),
       email: email.trim() ? email.trim().toLowerCase() : null,
-      whatsapp: whatsapp.trim() || null,
+      whatsapp: normalizeWhatsapp(whatsapp),
       notes: notes.trim() || null,
     };
 

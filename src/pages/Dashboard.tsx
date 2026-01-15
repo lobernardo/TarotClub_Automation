@@ -221,7 +221,7 @@ export default function Dashboard() {
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Nome</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Telefone</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">WhatsApp</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Estágio</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Captado em</th>
                   </tr>

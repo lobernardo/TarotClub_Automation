@@ -1,6 +1,6 @@
 import { Lead } from "@/types/database";
 import { StageBadge } from "@/components/ui/StageBadge";
-import { Clock, MessageCircle, Phone, GripVertical } from "lucide-react";
+import { Clock, MessageCircle, MessageSquare, GripVertical } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -51,7 +51,7 @@ export function LeadCard({ lead, onClick, isDragging }: LeadCardProps) {
           </div>
           {lead.whatsapp && (
             <div className="flex items-center gap-1">
-              <Phone className="h-3.5 w-3.5" />
+              <MessageSquare className="h-3.5 w-3.5" />
               <span>{lead.whatsapp}</span>
             </div>
           )}
