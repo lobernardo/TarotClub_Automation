@@ -4,6 +4,7 @@
 export type LeadStage =
   | "captured_form"
   | "checkout_started"
+  | "conectado"
   | "payment_pending"
   | "subscribed_active"
   | "subscribed_past_due"
@@ -16,6 +17,7 @@ export type LeadStage =
 export const CORE_STAGES: LeadStage[] = [
   "captured_form",
   "checkout_started",
+  "conectado",
   "payment_pending",
   "subscribed_active",
   "subscribed_past_due",
@@ -121,6 +123,12 @@ export const STAGE_CONFIG: Record<LeadStage, { label: string; color: string; des
     label: "Checkout Iniciado",
     color: "stage-checkout_started",
     description: "Iniciou o checkout",
+    isCore: true,
+  },
+  conectado: {
+    label: "Conectado",
+    color: "stage-conectado",
+    description: "Lead em conversa ativa com o suporte",
     isCore: true,
   },
   payment_pending: {

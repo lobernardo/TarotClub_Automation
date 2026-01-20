@@ -163,6 +163,10 @@
     @apply bg-[hsl(var(--stage-checkout))/0.1] text-[hsl(var(--stage-checkout))];
   }
 
+  .stage-conectado {
+    @apply bg-[hsl(199_60%_52%)/0.1] text-[hsl(199_60%_52%)];
+  }
+
   .stage-payment_pending,
   .stage-pending {
     @apply bg-[hsl(var(--stage-pending))/0.1] text-[hsl(var(--stage-pending))];

@@ -73,6 +73,7 @@ function getStageColorClass(stage: LeadStage): string {
   const colorMap: Record<LeadStage, string> = {
     captured_form: 'bg-blue-500',
     checkout_started: 'bg-purple-500',
+    conectado: 'bg-cyan-500',
     payment_pending: 'bg-amber-500',
     subscribed_active: 'bg-emerald-500',
     subscribed_past_due: 'bg-orange-500',
