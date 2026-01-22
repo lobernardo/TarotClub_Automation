@@ -1,8 +1,8 @@
-import { AppLayout } from '@/components/layout/AppLayout';
-import { Settings as SettingsIcon, Bell, Shield, Database, Webhook } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Settings as SettingsIcon, Bell, Shield, Database, Webhook } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function Settings() {
   return (
@@ -14,9 +14,7 @@ export default function Settings() {
             <SettingsIcon className="h-8 w-8 text-primary" />
             Configurações
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Configurações do sistema e integrações
-          </p>
+          <p className="text-muted-foreground mt-1">Configurações do sistema e integrações</p>
         </div>
 
         {/* Notifications */}
@@ -29,27 +27,21 @@ export default function Settings() {
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-foreground">Novos leads</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receber notificação quando um novo lead for captado
-                </p>
+                <p className="text-sm text-muted-foreground">Receber notificação quando um novo lead for captado</p>
               </div>
               <Switch defaultChecked />
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-foreground">Mensagens recebidas</Label>
-                <p className="text-sm text-muted-foreground">
-                  Notificar quando leads responderem
-                </p>
+                <p className="text-sm text-muted-foreground">Notificar quando leads responderem</p>
               </div>
               <Switch defaultChecked />
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-foreground">Novos pagamentos</Label>
-                <p className="text-sm text-muted-foreground">
-                  Alertar sobre novas assinaturas e pagamentos
-                </p>
+                <p className="text-sm text-muted-foreground">Alertar sobre novas assinaturas e pagamentos</p>
               </div>
               <Switch defaultChecked />
             </div>
@@ -73,7 +65,7 @@ export default function Settings() {
                   <p className="text-sm text-emerald-400">Conectado</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">Configurar</Button>
+              {/* <Button variant="outline" size="sm">Configurar</Button> */}
             </div>
             <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
               <div className="flex items-center gap-3">
@@ -85,7 +77,7 @@ export default function Settings() {
                   <p className="text-sm text-emerald-400">Conectado</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">Configurar</Button>
+              {/* <Button variant="outline" size="sm">Configurar</Button> */}
             </div>
             <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
               <div className="flex items-center gap-3">
@@ -97,7 +89,7 @@ export default function Settings() {
                   <p className="text-sm text-emerald-400">Conectado</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">Configurar</Button>
+              {/* <Button variant="outline" size="sm">Configurar</Button> */}
             </div>
           </div>
         </div>
@@ -112,13 +104,9 @@ export default function Settings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-foreground">Supabase</p>
-                <p className="text-sm text-muted-foreground">
-                  Banco de dados conectado
-                </p>
+                <p className="text-sm text-muted-foreground">Banco de dados conectado</p>
               </div>
-              <span className="text-sm text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full">
-                Ativo
-              </span>
+              <span className="text-sm text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full">Ativo</span>
             </div>
           </div>
         </div>
