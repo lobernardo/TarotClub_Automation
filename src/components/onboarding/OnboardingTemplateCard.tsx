@@ -19,7 +19,7 @@ export function OnboardingTemplateCard({
   template,
   onEdit,
   onToggleActive,
-  scheduledCount = 0,
+  //scheduledCount = 0,
   eligibleCount = 0,
 }: OnboardingTemplateCardProps) {
   const delayLabel = getDelayLabel(template.stage, template.delay_seconds);
