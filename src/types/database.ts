@@ -133,7 +133,7 @@ export const STAGE_CONFIG: Record<LeadStage, { label: string; color: string; des
     isCore: true,
   },
   checkout_started: {
-    label: "Checkout Iniciado",
+    label: "Lead Capturado – Checkout Aberto",
     color: "stage-checkout_started",
     description: "Iniciou o checkout",
     isCore: true,
