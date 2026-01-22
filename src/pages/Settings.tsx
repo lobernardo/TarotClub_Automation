@@ -61,7 +61,7 @@ export default function Settings() {
                   <span className="text-emerald-500 font-semibold text-sm">WA</span>
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">WhatsApp (Evolution API)</p>
+                  <p className="font-medium text-foreground">WhatsApp (Z-API)</p>
                   <p className="text-sm text-emerald-400">Conectado</p>
                 </div>
               </div>
