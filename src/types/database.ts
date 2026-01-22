@@ -13,9 +13,22 @@ export type LeadStage =
   | "lost"
   | "blocked";
 
-// All PRD stages for Kanban display (fixed order)
-export const CORE_STAGES: LeadStage[] = [
+// All backend stages (for type compatibility)
+export const ALL_STAGES: LeadStage[] = [
   "captured_form",
+  "checkout_started",
+  "conectado",
+  "payment_pending",
+  "subscribed_active",
+  "subscribed_past_due",
+  "subscribed_canceled",
+  "nurture",
+  "lost",
+  "blocked",
+];
+
+// Visible stages for Kanban display (frontend only - excludes captured_form)
+export const CORE_STAGES: LeadStage[] = [
   "checkout_started",
   "conectado",
   "payment_pending",
