@@ -36,7 +36,7 @@ export const ONBOARDING_STAGES: OnboardingStage[] = ["subscribed_active"];
 // Labels for all template stages
 export const STAGE_LABELS: Record<TemplateStage, string> = {
   captured_form: "Lead Captado",
-  checkout_started: "Lead Capturado - Checkout Aberto",
+  checkout_started: "Checkout Iniciado",
   subscribed_active: "Assinatura Ativa (Onboarding)",
   nurture: "Nutrição",
 };
