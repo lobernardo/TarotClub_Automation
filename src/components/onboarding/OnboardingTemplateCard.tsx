@@ -1,21 +1,27 @@
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Edit, Clock, Key, Users, Send } from 'lucide-react';
-import { OnboardingTemplate } from '@/hooks/useOnboardingTemplates';
-import { getDelayLabel, ONBOARDING_STAGE_LABELS } from '@/constants/followUpRules';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Edit, Clock, Key, Users, Send } from "lucide-react";
+import { OnboardingTemplate } from "@/hooks/useOnboardingTemplates";
+import { getDelayLabel, ONBOARDING_STAGE_LABELS } from "@/constants/followUpRules";
+import { cn } from "@/lib/utils";
 
 interface OnboardingTemplateCardProps {
   template: OnboardingTemplate;
   onEdit: (template: OnboardingTemplate) => void;
   onToggleActive: (id: string) => Promise<void> | void;
-  scheduledCount?: number; // Count from message_queue
+  //scheduledCount?: number; // Count from message_queue
   eligibleCount?: number; // Count of eligible leads (from Supabase)
 }
 
-export function OnboardingTemplateCard({ template, onEdit, onToggleActive, scheduledCount = 0, eligibleCount = 0 }: OnboardingTemplateCardProps) {
+export function OnboardingTemplateCard({
+  template,
+  onEdit,
+  onToggleActive,
+  scheduledCount = 0,
+  eligibleCount = 0,
+}: OnboardingTemplateCardProps) {
   const delayLabel = getDelayLabel(template.stage, template.delay_seconds);
   const stageLabel = ONBOARDING_STAGE_LABELS[template.stage];
 
@@ -39,34 +45,29 @@ export function OnboardingTemplateCard({ template, onEdit, onToggleActive, sched
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Switch 
+            <Switch
               checked={template.active}
               onCheckedChange={() => onToggleActive(template.id)}
               className="data-[state=checked]:bg-primary"
             />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(template)}
-              className="h-8 w-8"
-            >
+            <Button variant="ghost" size="icon" onClick={() => onEdit(template)} className="h-8 w-8">
               <Edit className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-foreground line-clamp-3 whitespace-pre-wrap">
-          {template.content}
-        </p>
+        <p className="text-sm text-foreground line-clamp-3 whitespace-pre-wrap">{template.content}</p>
         <div className="mt-3 flex items-center justify-between">
-          <span className={`inline-flex items-center gap-1.5 text-xs ${template.active ? 'text-emerald-400' : 'text-muted-foreground'}`}>
-            <span className={`w-2 h-2 rounded-full ${template.active ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
-            {template.active ? 'Ativo' : 'Inativo'}
+          <span
+            className={`inline-flex items-center gap-1.5 text-xs ${template.active ? "text-emerald-400" : "text-muted-foreground"}`}
+          >
+            <span className={`w-2 h-2 rounded-full ${template.active ? "bg-emerald-400" : "bg-muted-foreground"}`} />
+            {template.active ? "Ativo" : "Inativo"}
           </span>
-          
+
           <div className="flex items-center gap-2">
-            {/* Scheduled messages badge */}
+            {/* Scheduled messages badge 
             {scheduledCount > 0 && (
               <Badge 
                 variant="outline" 
@@ -75,20 +76,20 @@ export function OnboardingTemplateCard({ template, onEdit, onToggleActive, sched
                 <Send className="h-3 w-3" />
                 {scheduledCount} agendada{scheduledCount !== 1 ? 's' : ''}
               </Badge>
-            )}
-            
+            )} */}
+
             {/* Eligible leads badge */}
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className={cn(
                 "flex items-center gap-1.5 text-xs",
-                eligibleCount > 0 
-                  ? "bg-primary/10 text-primary border-primary/30" 
-                  : "bg-muted/50 text-muted-foreground border-border"
+                eligibleCount > 0
+                  ? "bg-primary/10 text-primary border-primary/30"
+                  : "bg-muted/50 text-muted-foreground border-border",
               )}
             >
               <Users className="h-3 w-3" />
-              {eligibleCount} lead{eligibleCount !== 1 ? 's' : ''} elegível{eligibleCount !== 1 ? 'eis' : ''}
+              {eligibleCount} lead{eligibleCount !== 1 ? "s" : ""} elegível{eligibleCount !== 1 ? "eis" : ""}
             </Badge>
           </div>
         </div>
