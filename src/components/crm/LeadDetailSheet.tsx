@@ -61,7 +61,7 @@ interface LeadDetailSheetProps {
 // Event type labels
 const EVENT_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
   form_submitted: { label: "Formulário enviado", icon: <FileText className="h-4 w-4" /> },
-  checkout_started: { label: "Lead Capturado | Checkout iniciado", icon: <CreditCard className="h-4 w-4" /> },
+  checkout_started: { label: "Checkout iniciado", icon: <CreditCard className="h-4 w-4" /> },
   payment_created: { label: "Pagamento criado", icon: <CreditCard className="h-4 w-4" /> },
   payment_confirmed: { label: "Pagamento confirmado", icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
   follow_sent: { label: "Follow-up enviado", icon: <Send className="h-4 w-4" /> },
