@@ -34,7 +34,7 @@ interface Appointment {
   status: "requested" | "confirmed" | "canceled";
   notes: string | null;
   meet_link: string | null;
-  lead: Lead | null; // normalizado (sempre 1 ou null)
+  lead: Lead | null;
 }
 
 /* ───────────── HELPERS ───────────── */
@@ -65,7 +65,6 @@ function StatusBadge({ status }: { status: Appointment["status"] }) {
 }
 
 function Badge({ text, icon, color }: { text: string; icon: React.ReactNode; color: "emerald" | "red" | "amber" }) {
-  // tailwind dynamic class: mantém simples (sem string dinâmica quebrar build)
   const cls = color === "emerald" ? "text-emerald-500" : color === "red" ? "text-red-500" : "text-amber-500";
 
   return (
@@ -83,7 +82,6 @@ function AppointmentModal({ appointment, onClose }: { appointment?: Appointment;
 
   async function save() {
     if (!appointment) return;
-
     await supabase.from("appointments").update({ notes }).eq("id", appointment.id);
     onClose();
   }
@@ -182,14 +180,8 @@ export default function Appointments() {
             Agenda
           </h1>
 
-          <Button
-            onClick={() => {
-              // por enquanto "novo" continua sendo via fluxo que vocês já tinham.
-              // aqui a gente só abre o modal de edição quando clicar no lápis.
-              // Se quiser, no próximo passo eu integro "novo" com o modal de criação de verdade.
-              alert("Criação pelo botão ainda não está ligada ao fluxo final. Vamos ligar no próximo passo.");
-            }}
-          >
+          {/* BOTÃO CORRIGIDO */}
+          <Button onClick={() => console.warn("Novo Agendamento ainda não integrado.")}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Agendamento
           </Button>
@@ -256,14 +248,13 @@ export default function Appointments() {
                   <div className="flex items-center gap-3">
                     <StatusBadge status={ap.status} />
 
-                    <Button size="icon" variant="ghost" onClick={() => setEditing(ap)} title="Editar">
+                    <Button size="icon" variant="ghost" onClick={() => setEditing(ap)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
 
                     <Button
                       size="icon"
                       variant="ghost"
-                      title="Cancelar"
                       onClick={async () => {
                         await supabase.from("appointments").update({ status: "canceled" }).eq("id", ap.id);
                         fetchAppointments();
