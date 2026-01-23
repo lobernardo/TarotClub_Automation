@@ -22,7 +22,7 @@ interface Appointment {
   status: "requested" | "confirmed" | "canceled";
   notes: string | null;
   meet_link: string | null;
-  lead: Lead[];
+  lead: Lead[]; // Supabase SEMPRE retorna array
 }
 
 /* ───────────── PAGE ───────────── */
@@ -35,7 +35,7 @@ export default function Appointments() {
   async function fetchAppointments() {
     setLoading(true);
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("appointments")
       .select(
         `
@@ -45,7 +45,7 @@ export default function Appointments() {
         status,
         notes,
         meet_link,
-        lead:lead_id (
+        lead:leads!inner (
           id,
           name,
           email,
@@ -55,7 +55,10 @@ export default function Appointments() {
       )
       .order("starts_at", { ascending: true });
 
-    setAppointments((data ?? []) as Appointment[]);
+    if (!error) {
+      setAppointments(data as Appointment[]);
+    }
+
     setLoading(false);
   }
 
@@ -98,7 +101,7 @@ export default function Appointments() {
         ) : (
           <div className="space-y-4">
             {appointments.map((ap) => {
-              const lead = Array.isArray(ap.lead) && ap.lead.length > 0 ? ap.lead[0] : null;
+              const lead = ap.lead[0]; // agora SEMPRE existe
 
               return (
                 <div key={ap.id} className="glass-card p-5 rounded-xl">
@@ -109,19 +112,17 @@ export default function Appointments() {
                       </div>
 
                       <div>
-                        <h3 className="font-semibold text-lg">{lead?.name ?? "Lead"}</h3>
+                        <h3 className="font-semibold text-lg">{lead.name}</h3>
 
                         <p className="text-sm text-muted-foreground">
-                          {lead?.email}
-                          {lead?.whatsapp && ` · ${lead.whatsapp}`}
+                          {lead.email}
+                          {lead.whatsapp && ` · ${lead.whatsapp}`}
                         </p>
 
                         <div className="flex gap-4 mt-2 text-sm">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            {format(new Date(ap.starts_at), "EEEE, dd 'de' MMMM", {
-                              locale: ptBR,
-                            })}
+                            {format(new Date(ap.starts_at), "EEEE, dd 'de' MMMM", { locale: ptBR })}
                           </span>
 
                           <span className="flex items-center gap-1">
@@ -215,10 +216,7 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
   }, []);
 
   async function create() {
-    if (!leadId || !date || !hour) {
-      alert("Preencha todos os campos");
-      return;
-    }
+    if (!leadId || !date || !hour) return;
 
     const starts_at = `${date}T${hour}:00-03:00`;
     const ends_at = `${date}T${String(Number(hour.split(":")[0]) + 1).padStart(2, "0")}:00-03:00`;
