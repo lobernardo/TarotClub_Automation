@@ -22,7 +22,9 @@ interface Appointment {
   status: "requested" | "confirmed" | "canceled";
   notes: string | null;
   meet_link: string | null;
-  lead: Lead[];
+
+  // ✅ 1:1 relation vem como OBJETO (ou null)
+  lead: Lead | null;
 }
 
 /* ───────────── PAGE ───────────── */
@@ -35,7 +37,7 @@ export default function Appointments() {
   async function fetchAppointments() {
     setLoading(true);
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("appointments")
       .select(
         `
@@ -55,7 +57,14 @@ export default function Appointments() {
       )
       .order("starts_at", { ascending: true });
 
-    setAppointments((data ?? []) as Appointment[]);
+    if (error) {
+      console.error("fetchAppointments error:", error);
+      setAppointments([]);
+      setLoading(false);
+      return;
+    }
+
+    setAppointments((data ?? []) as unknown as Appointment[]);
     setLoading(false);
   }
 
@@ -102,20 +111,19 @@ export default function Appointments() {
 
               return (
                 <div key={ap.id} className="glass-card p-5 rounded-xl">
-                  <div className="flex justify-between items-start gap-6">
-                    {/* LEFT */}
+                  <div className="flex justify-between items-start">
                     <div className="flex gap-4">
                       <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
                         <User />
                       </div>
 
-                      <div className="space-y-1">
-                        <h3 className="font-semibold text-lg">{lead?.name ?? "Lead"}</h3>
+                      <div>
+                        <h3 className="font-semibold text-lg">{lead?.name ?? "Lead não vinculado"}</h3>
 
                         {(lead?.email || lead?.whatsapp) && (
                           <p className="text-sm text-muted-foreground">
-                            {lead?.email}
-                            {lead?.whatsapp && ` · ${lead.whatsapp}`}
+                            {lead?.email ?? ""}
+                            {lead?.whatsapp ? ` · ${lead.whatsapp}` : ""}
                           </p>
                         )}
 
@@ -133,14 +141,14 @@ export default function Appointments() {
                           </span>
                         </div>
 
-                        {/* NOTES */}
+                        {/* ✅ NOTES */}
                         {ap.notes && (
-                          <div className="mt-3 text-sm bg-muted/30 rounded-md px-3 py-2">
-                            <strong>Anotações:</strong> {ap.notes}
+                          <div className="mt-2 text-sm bg-muted/30 rounded px-3 py-2 whitespace-pre-wrap">
+                            {ap.notes}
                           </div>
                         )}
 
-                        {/* MEET LINK */}
+                        {/* ✅ MEET LINK */}
                         {ap.meet_link && (
                           <a
                             href={ap.meet_link}
@@ -155,7 +163,6 @@ export default function Appointments() {
                       </div>
                     </div>
 
-                    {/* RIGHT */}
                     <StatusBadge status={ap.status} />
                   </div>
                 </div>
@@ -219,9 +226,9 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     supabase
       .from("leads")
-      .select("id, name, email")
+      .select("id, name, email, whatsapp")
       .order("name")
-      .then(({ data }) => setLeads(data ?? []));
+      .then(({ data }) => setLeads((data ?? []) as Lead[]));
   }, []);
 
   async function create() {
@@ -231,21 +238,30 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
     }
 
     const starts_at = `${date}T${hour}:00-03:00`;
-    const ends_at = `${date}T${String(Number(hour.split(":")[0]) + 1).padStart(2, "0")}:00-03:00`;
+    const endsHour = String(Number(hour.split(":")[0]) + 1).padStart(2, "0");
+    const ends_at = `${date}T${endsHour}:00-03:00`;
 
-    const { data } = await supabase
+    // ✅ cria como requested (pra ter sentido “Solicitados”)
+    const { data, error } = await supabase
       .from("appointments")
       .insert({
         lead_id: leadId,
         starts_at,
         ends_at,
-        status: "confirmed",
-        notes,
+        status: "requested",
+        notes: notes || null,
       })
       .select("id")
       .single();
 
-    await fetch("/functions/v1/sync_google_calendar", {
+    if (error || !data?.id) {
+      console.error("insert appointment error:", error);
+      alert("Erro ao criar agendamento");
+      return;
+    }
+
+    // ✅ dispara push pro Google + grava meet_link (a edge function faz o update)
+    const res = await fetch("/functions/v1/sync_google_calendar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -253,6 +269,11 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
         appointment_id: data.id,
       }),
     });
+
+    if (!res.ok) {
+      console.error("sync_google_calendar push failed", await res.text());
+      // não bloqueia o fechamento — o agendamento já existe no sistema
+    }
 
     onClose();
   }
@@ -274,11 +295,24 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
           ))}
         </select>
 
-        <input type="date" className="w-full border rounded p-2" onChange={(e) => setDate(e.target.value)} />
-        <input type="time" className="w-full border rounded p-2" onChange={(e) => setHour(e.target.value)} />
+        <input
+          type="date"
+          className="w-full border rounded p-2"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+
+        <input
+          type="time"
+          className="w-full border rounded p-2"
+          value={hour}
+          onChange={(e) => setHour(e.target.value)}
+        />
+
         <textarea
           placeholder="Anotações"
           className="w-full border rounded p-2"
+          value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
 
