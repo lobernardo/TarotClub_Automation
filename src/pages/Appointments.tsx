@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, User, CheckCircle, XCircle, Plus, Video } from "lucide-react";
+import { Calendar, Clock, User, CheckCircle, XCircle, Plus, Video, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,8 +22,6 @@ interface Appointment {
   status: "requested" | "confirmed" | "canceled";
   notes: string | null;
   meet_link: string | null;
-
-  // ✅ 1:1 relation vem como OBJETO (ou null)
   lead: Lead | null;
 }
 
@@ -32,12 +30,12 @@ interface Appointment {
 export default function Appointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<Appointment | null>(null);
 
   async function fetchAppointments() {
     setLoading(true);
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("appointments")
       .select(
         `
@@ -57,14 +55,7 @@ export default function Appointments() {
       )
       .order("starts_at", { ascending: true });
 
-    if (error) {
-      console.error("fetchAppointments error:", error);
-      setAppointments([]);
-      setLoading(false);
-      return;
-    }
-
-    setAppointments((data ?? []) as unknown as Appointment[]);
+    setAppointments((data ?? []) as Appointment[]);
     setLoading(false);
   }
 
@@ -86,7 +77,7 @@ export default function Appointments() {
             Agenda
           </h1>
 
-          <Button onClick={() => setShowCreate(true)}>
+          <Button onClick={() => setEditing({} as Appointment)}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Agendamento
           </Button>
@@ -102,79 +93,80 @@ export default function Appointments() {
         {/* LIST */}
         {loading ? (
           <div className="text-center py-10">Carregando…</div>
-        ) : appointments.length === 0 ? (
-          <div className="text-center py-10">Nenhum agendamento</div>
         ) : (
           <div className="space-y-4">
-            {appointments.map((ap) => {
-              const lead = ap.lead;
-
-              return (
-                <div key={ap.id} className="glass-card p-5 rounded-xl">
-                  <div className="flex justify-between items-start">
-                    <div className="flex gap-4">
-                      <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
-                        <User />
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold text-lg">{lead?.name ?? "Lead não vinculado"}</h3>
-
-                        {(lead?.email || lead?.whatsapp) && (
-                          <p className="text-sm text-muted-foreground">
-                            {lead?.email ?? ""}
-                            {lead?.whatsapp ? ` · ${lead.whatsapp}` : ""}
-                          </p>
-                        )}
-
-                        <div className="flex gap-4 mt-2 text-sm">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {format(new Date(ap.starts_at), "EEEE, dd 'de' MMMM", {
-                              locale: ptBR,
-                            })}
-                          </span>
-
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            {format(new Date(ap.starts_at), "HH:mm")} – {format(new Date(ap.ends_at), "HH:mm")}
-                          </span>
-                        </div>
-
-                        {/* ✅ NOTES */}
-                        {ap.notes && (
-                          <div className="mt-2 text-sm bg-muted/30 rounded px-3 py-2 whitespace-pre-wrap">
-                            {ap.notes}
-                          </div>
-                        )}
-
-                        {/* ✅ MEET LINK */}
-                        {ap.meet_link && (
-                          <a
-                            href={ap.meet_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 mt-3 text-sm text-blue-600 underline"
-                          >
-                            <Video className="h-4 w-4" />
-                            Entrar no Google Meet
-                          </a>
-                        )}
-                      </div>
+            {appointments.map((ap) => (
+              <div key={ap.id} className="glass-card p-5 rounded-xl">
+                <div className="flex justify-between items-start">
+                  <div className="flex gap-4">
+                    <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
+                      <User />
                     </div>
 
-                    <StatusBadge status={ap.status} />
+                    <div>
+                      <h3 className="font-semibold text-lg">{ap.lead?.name ?? "Lead não vinculado"}</h3>
+
+                      <p className="text-sm text-muted-foreground">
+                        {ap.lead?.email}
+                        {ap.lead?.whatsapp && ` · ${ap.lead.whatsapp}`}
+                      </p>
+
+                      <div className="flex gap-4 mt-2 text-sm">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {format(new Date(ap.starts_at), "EEEE, dd 'de' MMMM", {
+                            locale: ptBR,
+                          })}
+                        </span>
+
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          {format(new Date(ap.starts_at), "HH:mm")} – {format(new Date(ap.ends_at), "HH:mm")}
+                        </span>
+                      </div>
+
+                      {ap.notes && <div className="mt-2 text-sm bg-muted/30 rounded px-3 py-2">{ap.notes}</div>}
+
+                      {ap.meet_link && (
+                        <a
+                          href={ap.meet_link}
+                          target="_blank"
+                          className="inline-flex items-center gap-2 mt-3 text-sm text-blue-600 underline"
+                        >
+                          <Video className="h-4 w-4" />
+                          Entrar no Google Meet
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button size="icon" variant="ghost" onClick={() => setEditing(ap)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={async () => {
+                        await supabase.from("appointments").update({ status: "canceled" }).eq("id", ap.id);
+                        fetchAppointments();
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
 
-        {showCreate && (
-          <CreateAppointmentModal
+        {editing && (
+          <AppointmentModal
+            appointment={editing.id ? editing : undefined}
             onClose={() => {
-              setShowCreate(false);
+              setEditing(null);
               fetchAppointments();
             }}
           />
@@ -195,85 +187,15 @@ function Stat({ title, value }: { title: string; value: number }) {
   );
 }
 
-function StatusBadge({ status }: { status: Appointment["status"] }) {
-  if (status === "confirmed") {
-    return <Badge text="Confirmado" icon={<CheckCircle />} color="emerald" />;
-  }
-  if (status === "canceled") {
-    return <Badge text="Cancelado" icon={<XCircle />} color="red" />;
-  }
-  return <Badge text="Solicitado" icon={<Clock />} color="amber" />;
-}
-
-function Badge({ text, icon, color }: any) {
-  return (
-    <span className={`flex items-center gap-2 text-${color}-500`}>
-      {icon}
-      {text}
-    </span>
-  );
-}
-
 /* ───────────── MODAL ───────────── */
 
-function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [leadId, setLeadId] = useState("");
-  const [date, setDate] = useState("");
-  const [hour, setHour] = useState("");
-  const [notes, setNotes] = useState("");
+function AppointmentModal({ appointment, onClose }: { appointment?: Appointment; onClose: () => void }) {
+  const [notes, setNotes] = useState(appointment?.notes ?? "");
 
-  useEffect(() => {
-    supabase
-      .from("leads")
-      .select("id, name, email, whatsapp")
-      .order("name")
-      .then(({ data }) => setLeads((data ?? []) as Lead[]));
-  }, []);
+  async function save() {
+    if (!appointment) return;
 
-  async function create() {
-    if (!leadId || !date || !hour) {
-      alert("Preencha todos os campos");
-      return;
-    }
-
-    const starts_at = `${date}T${hour}:00-03:00`;
-    const endsHour = String(Number(hour.split(":")[0]) + 1).padStart(2, "0");
-    const ends_at = `${date}T${endsHour}:00-03:00`;
-
-    // ✅ cria como requested (pra ter sentido “Solicitados”)
-    const { data, error } = await supabase
-      .from("appointments")
-      .insert({
-        lead_id: leadId,
-        starts_at,
-        ends_at,
-        status: "requested",
-        notes: notes || null,
-      })
-      .select("id")
-      .single();
-
-    if (error || !data?.id) {
-      console.error("insert appointment error:", error);
-      alert("Erro ao criar agendamento");
-      return;
-    }
-
-    // ✅ dispara push pro Google + grava meet_link (a edge function faz o update)
-    const res = await fetch("/functions/v1/sync_google_calendar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "push",
-        appointment_id: data.id,
-      }),
-    });
-
-    if (!res.ok) {
-      console.error("sync_google_calendar push failed", await res.text());
-      // não bloqueia o fechamento — o agendamento já existe no sistema
-    }
+    await supabase.from("appointments").update({ notes }).eq("id", appointment.id);
 
     onClose();
   }
@@ -282,42 +204,19 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-background rounded-xl p-6 w-full max-w-md space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Novo Agendamento</h2>
+          <h2 className="text-xl font-semibold">Editar Agendamento</h2>
           <button onClick={onClose}>✕</button>
         </div>
 
-        <select className="w-full border rounded p-2" value={leadId} onChange={(e) => setLeadId(e.target.value)}>
-          <option value="">Selecione o lead</option>
-          {leads.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name} — {l.email}
-            </option>
-          ))}
-        </select>
-
-        <input
-          type="date"
-          className="w-full border rounded p-2"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
-
-        <input
-          type="time"
-          className="w-full border rounded p-2"
-          value={hour}
-          onChange={(e) => setHour(e.target.value)}
-        />
-
         <textarea
-          placeholder="Anotações"
           className="w-full border rounded p-2"
+          placeholder="Anotações"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
 
-        <Button className="w-full" onClick={create}>
-          Criar agendamento
+        <Button className="w-full" onClick={save}>
+          Salvar
         </Button>
       </div>
     </div>
