@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, User, CheckCircle, XCircle, Plus, X } from "lucide-react";
+import { Calendar, Clock, User, CheckCircle, XCircle, Plus, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-/* ───────────────── TYPES ───────────────── */
+/* ───────────── TYPES ───────────── */
+
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  whatsapp?: string | null;
+}
 
 interface Appointment {
   id: string;
@@ -15,14 +22,10 @@ interface Appointment {
   status: "requested" | "confirmed" | "canceled";
   notes: string | null;
   meet_link: string | null;
-  lead?: {
-    name: string;
-    email: string;
-    whatsapp?: string | null;
-  }[];
+  lead: Lead[];
 }
 
-/* ───────────────── PAGE ───────────────── */
+/* ───────────── PAGE ───────────── */
 
 export default function Appointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -43,6 +46,7 @@ export default function Appointments() {
         notes,
         meet_link,
         lead:lead_id (
+          id,
           name,
           email,
           whatsapp
@@ -59,15 +63,15 @@ export default function Appointments() {
     fetchAppointments();
   }, []);
 
-  const confirmedCount = appointments.filter((a) => a.status === "confirmed").length;
-  const requestedCount = appointments.filter((a) => a.status === "requested").length;
-  const canceledCount = appointments.filter((a) => a.status === "canceled").length;
+  const requested = appointments.filter((a) => a.status === "requested").length;
+  const confirmed = appointments.filter((a) => a.status === "confirmed").length;
+  const canceled = appointments.filter((a) => a.status === "canceled").length;
 
   return (
     <AppLayout>
       <div className="space-y-6">
         {/* HEADER */}
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Calendar className="h-8 w-8 text-primary" />
             Agenda
@@ -81,41 +85,43 @@ export default function Appointments() {
 
         {/* STATS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Stat title="Solicitados" value={requestedCount} />
-          <Stat title="Confirmados" value={confirmedCount} />
-          <Stat title="Cancelados" value={canceledCount} />
+          <Stat title="Solicitados" value={requested} />
+          <Stat title="Confirmados" value={confirmed} />
+          <Stat title="Cancelados" value={canceled} />
         </div>
 
         {/* LIST */}
         {loading ? (
-          <div className="text-center py-12">Carregando…</div>
+          <div className="text-center py-10">Carregando…</div>
         ) : appointments.length === 0 ? (
-          <div className="text-center py-12">Nenhum compromisso encontrado</div>
+          <div className="text-center py-10">Nenhum agendamento</div>
         ) : (
           <div className="space-y-4">
             {appointments.map((ap) => {
               const lead = ap.lead?.[0];
 
               return (
-                <div key={ap.id} className="glass-card rounded-xl p-5">
+                <div key={ap.id} className="glass-card p-5 rounded-xl">
                   <div className="flex justify-between items-start">
                     <div className="flex gap-4">
                       <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
-                        <User className="h-6 w-6" />
+                        <User />
                       </div>
 
                       <div>
                         <h3 className="font-semibold text-lg">{lead?.name ?? "Lead"}</h3>
 
                         <p className="text-sm text-muted-foreground">
-                          {lead?.email ?? ""}
-                          {lead?.whatsapp ? ` • ${lead.whatsapp}` : ""}
+                          {lead?.email}
+                          {lead?.whatsapp && ` · ${lead.whatsapp}`}
                         </p>
 
                         <div className="flex gap-4 mt-2 text-sm">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            {format(new Date(ap.starts_at), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                            {format(new Date(ap.starts_at), "EEEE, dd 'de' MMMM", {
+                              locale: ptBR,
+                            })}
                           </span>
 
                           <span className="flex items-center gap-1">
@@ -131,8 +137,9 @@ export default function Appointments() {
                             href={ap.meet_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-block mt-2 text-blue-600 underline text-sm"
+                            className="inline-flex items-center gap-2 mt-3 text-sm text-blue-600 underline"
                           >
+                            <Video className="h-4 w-4" />
                             Entrar no Google Meet
                           </a>
                         )}
@@ -160,7 +167,7 @@ export default function Appointments() {
   );
 }
 
-/* ───────────────── COMPONENTS ───────────────── */
+/* ───────────── UI ───────────── */
 
 function Stat({ title, value }: { title: string; value: number }) {
   return (
@@ -173,32 +180,39 @@ function Stat({ title, value }: { title: string; value: number }) {
 
 function StatusBadge({ status }: { status: Appointment["status"] }) {
   if (status === "confirmed") {
-    return <Badge text="Confirmado" icon={<CheckCircle />} className="text-emerald-500" />;
+    return <Badge text="Confirmado" icon={<CheckCircle />} color="emerald" />;
   }
-
   if (status === "canceled") {
-    return <Badge text="Cancelado" icon={<XCircle />} className="text-red-500" />;
+    return <Badge text="Cancelado" icon={<XCircle />} color="red" />;
   }
-
-  return <Badge text="Solicitado" icon={<Clock />} className="text-amber-500" />;
+  return <Badge text="Solicitado" icon={<Clock />} color="amber" />;
 }
 
-function Badge({ text, icon, className }: { text: string; icon: JSX.Element; className: string }) {
+function Badge({ text, icon, color }: any) {
   return (
-    <span className={`flex items-center gap-2 ${className}`}>
+    <span className={`flex items-center gap-2 text-${color}-500`}>
       {icon}
       {text}
     </span>
   );
 }
 
-/* ───────────────── MODAL ───────────────── */
+/* ───────────── MODAL ───────────── */
 
 function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [leadId, setLeadId] = useState("");
   const [date, setDate] = useState("");
   const [hour, setHour] = useState("");
   const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    supabase
+      .from("leads")
+      .select("id, name, email")
+      .order("name")
+      .then(({ data }) => setLeads(data ?? []));
+  }, []);
 
   async function create() {
     if (!leadId || !date || !hour) {
@@ -206,15 +220,15 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    const startsAt = `${date}T${hour}:00-03:00`;
-    const endsAt = `${date}T${String(Number(hour.split(":")[0]) + 1).padStart(2, "0")}:00-03:00`;
+    const starts_at = `${date}T${hour}:00-03:00`;
+    const ends_at = `${date}T${String(Number(hour.split(":")[0]) + 1).padStart(2, "0")}:00-03:00`;
 
     const { data } = await supabase
       .from("appointments")
       .insert({
         lead_id: leadId,
-        starts_at: startsAt,
-        ends_at: endsAt,
+        starts_at,
+        ends_at,
         status: "confirmed",
         notes,
       })
@@ -234,27 +248,27 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-background rounded-xl p-6 w-full max-w-md space-y-4 relative">
-        <button onClick={onClose} className="absolute right-4 top-4 text-muted-foreground">
-          <X />
-        </button>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-background rounded-xl p-6 w-full max-w-md space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Novo Agendamento</h2>
+          <button onClick={onClose}>✕</button>
+        </div>
 
-        <h2 className="text-xl font-semibold">Novo Agendamento</h2>
+        <select className="w-full border rounded p-2" value={leadId} onChange={(e) => setLeadId(e.target.value)}>
+          <option value="">Selecione o lead</option>
+          {leads.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name} — {l.email}
+            </option>
+          ))}
+        </select>
 
-        <input
-          placeholder="Lead ID"
-          className="w-full border rounded px-3 py-2"
-          onChange={(e) => setLeadId(e.target.value)}
-        />
-
-        <input type="date" className="w-full border rounded px-3 py-2" onChange={(e) => setDate(e.target.value)} />
-
-        <input type="time" className="w-full border rounded px-3 py-2" onChange={(e) => setHour(e.target.value)} />
-
+        <input type="date" className="w-full border rounded p-2" onChange={(e) => setDate(e.target.value)} />
+        <input type="time" className="w-full border rounded p-2" onChange={(e) => setHour(e.target.value)} />
         <textarea
           placeholder="Anotações"
-          className="w-full border rounded px-3 py-2"
+          className="w-full border rounded p-2"
           onChange={(e) => setNotes(e.target.value)}
         />
 
