@@ -22,7 +22,7 @@ interface Appointment {
   status: "requested" | "confirmed" | "canceled";
   notes: string | null;
   meet_link: string | null;
-  lead: Lead[]; // join sempre vem como array
+  lead: Lead[]; // retorno do Supabase é ARRAY
 }
 
 /* ───────────── PAGE ───────────── */
@@ -55,10 +55,7 @@ export default function Appointments() {
       )
       .order("starts_at", { ascending: true });
 
-    if (error) {
-      console.error("Erro ao buscar appointments:", error);
-      setAppointments([]);
-    } else {
+    if (!error) {
       setAppointments((data ?? []) as Appointment[]);
     }
 
@@ -104,7 +101,8 @@ export default function Appointments() {
         ) : (
           <div className="space-y-4">
             {appointments.map((ap) => {
-              const lead = ap.lead?.[0]; // 👈 agora vem certo
+              // NORMALIZAÇÃO DEFINITIVA (sem fallback mentiroso)
+              const lead: Lead | null = Array.isArray(ap.lead) && ap.lead.length > 0 ? ap.lead[0] : null;
 
               return (
                 <div key={ap.id} className="glass-card p-5 rounded-xl">
@@ -115,14 +113,12 @@ export default function Appointments() {
                       </div>
 
                       <div>
-                        <h3 className="font-semibold text-lg">{lead?.name ?? "Lead não encontrado"}</h3>
+                        <h3 className="font-semibold text-lg">{lead ? lead.name : "—"}</h3>
 
-                        {lead && (
-                          <p className="text-sm text-muted-foreground">
-                            {lead.email}
-                            {lead.whatsapp && ` · ${lead.whatsapp}`}
-                          </p>
-                        )}
+                        <p className="text-sm text-muted-foreground">
+                          {lead?.email ?? ""}
+                          {lead?.whatsapp ? ` · ${lead.whatsapp}` : ""}
+                        </p>
 
                         <div className="flex gap-4 mt-2 text-sm">
                           <span className="flex items-center gap-1">
@@ -221,12 +217,15 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
   }, []);
 
   async function create() {
-    if (!leadId || !date || !hour) return;
+    if (!leadId || !date || !hour) {
+      alert("Preencha todos os campos");
+      return;
+    }
 
     const starts_at = `${date}T${hour}:00-03:00`;
     const ends_at = `${date}T${String(Number(hour.split(":")[0]) + 1).padStart(2, "0")}:00-03:00`;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("appointments")
       .insert({
         lead_id: leadId,
@@ -238,14 +237,16 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
       .select("id")
       .single();
 
-    await fetch("/functions/v1/sync_google_calendar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "push",
-        appointment_id: data.id,
-      }),
-    });
+    if (!error && data?.id) {
+      await fetch("/functions/v1/sync_google_calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "push",
+          appointment_id: data.id,
+        }),
+      });
+    }
 
     onClose();
   }
