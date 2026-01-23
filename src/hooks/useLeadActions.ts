@@ -71,21 +71,34 @@ export function useLeadActions(onUpdate?: () => void) {
           console.log("Could not log stage change event:", eventErr);
         }
 
-        // Cancel scheduled messages for old stage
-        try {
-          await supabase
-            .from("message_queue")
-            .update({
-              status: "canceled",
-              cancel_reason: "stage_changed",
-              canceled_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq("lead_id", leadId)
-            .eq("status", "scheduled")
-            .eq("stage", oldStage);
-        } catch (queueErr) {
-          console.log("Could not cancel queue items:", queueErr);
+        // CANONICAL RULE: Cancel checkout follow-ups ONLY when leaving checkout_started
+        // This protects onboarding messages (created AFTER stage change to subscribed_active)
+        if (oldStage === 'checkout_started' && newStage !== 'checkout_started') {
+          const stageChangedAt = new Date().toISOString();
+          
+          try {
+            // Cancel all scheduled messages created BEFORE the stage change
+            // Onboarding messages are safe because they're created AFTER this point
+            const { error: cancelError, count } = await supabase
+              .from("message_queue")
+              .update({
+                status: "canceled",
+                cancel_reason: `exited_checkout_started_to_${newStage}`,
+                canceled_at: stageChangedAt,
+                updated_at: stageChangedAt,
+              })
+              .eq("lead_id", leadId)
+              .eq("status", "scheduled")
+              .lte("created_at", stageChangedAt);
+            
+            if (cancelError) {
+              console.error("Error canceling checkout follow-ups:", cancelError);
+            } else {
+              console.log(`Canceled ${count ?? 'unknown'} checkout follow-ups for lead ${leadId}`);
+            }
+          } catch (queueErr) {
+            console.log("Could not cancel queue items:", queueErr);
+          }
         }
 
         toast.success("Estágio atualizado com sucesso");
