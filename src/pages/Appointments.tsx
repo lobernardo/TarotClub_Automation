@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Clock, User, CheckCircle, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useEffect, useState } from "react";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { Calendar, Clock, User, CheckCircle, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface Appointment {
   id: string;
   lead_id: string;
-  scheduled_at: string;
-  confirmed: boolean;
+  starts_at: string;
+  ends_at: string | null;
+  status: "scheduled" | "canceled" | "completed";
   notes: string | null;
   lead?: {
     name: string;
@@ -25,60 +26,59 @@ export default function Appointments() {
   useEffect(() => {
     async function fetchAppointments() {
       setLoading(true);
-      
-      // Try to fetch appointments - table may not exist yet
+
       try {
         const { data, error } = await supabase
-          .from('appointments')
-          .select(`
+          .from("appointments")
+          .select(
+            `
             id,
             lead_id,
-            scheduled_at,
-            confirmed,
+            starts_at,
+            ends_at,
+            status,
             notes
-          `)
-          .gte('scheduled_at', new Date().toISOString())
-          .order('scheduled_at', { ascending: true });
-        
+          `,
+          )
+          .gte("starts_at", new Date().toISOString())
+          .order("starts_at", { ascending: true });
+
         if (error) {
-          console.log('Appointments table may not exist:', error);
+          console.error("Error fetching appointments:", error);
           setAppointments([]);
           setLoading(false);
           return;
         }
 
         if (data && data.length > 0) {
-          // Fetch leads for appointments
-          const leadIds = [...new Set(data.map(a => a.lead_id))];
-          const { data: leadsData } = await supabase
-            .from('leads')
-            .select('id, name, email')
-            .in('id', leadIds);
-          
-          const leadsMap = new Map((leadsData || []).map(l => [l.id, l]));
-          
-          const appointmentsWithLeads = data.map(apt => ({
+          const leadIds = [...new Set(data.map((a) => a.lead_id))];
+
+          const { data: leadsData } = await supabase.from("leads").select("id, name, email").in("id", leadIds);
+
+          const leadsMap = new Map((leadsData || []).map((l) => [l.id, l]));
+
+          const appointmentsWithLeads = data.map((apt) => ({
             ...apt,
-            lead: leadsMap.get(apt.lead_id)
+            lead: leadsMap.get(apt.lead_id),
           }));
-          
+
           setAppointments(appointmentsWithLeads);
         } else {
           setAppointments([]);
         }
       } catch (err) {
-        console.log('Error fetching appointments:', err);
+        console.error("Unexpected error fetching appointments:", err);
         setAppointments([]);
       }
-      
+
       setLoading(false);
     }
-    
+
     fetchAppointments();
   }, []);
 
-  const confirmedCount = appointments.filter(a => a.confirmed).length;
-  const pendingCount = appointments.filter(a => !a.confirmed).length;
+  const scheduledCount = appointments.filter((a) => a.status === "scheduled").length;
+  const otherCount = appointments.length - scheduledCount;
 
   return (
     <AppLayout>
@@ -88,13 +88,15 @@ export default function Appointments() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <Calendar className="h-8 w-8 text-primary" />
-              Agenda de Consultas
+              Agenda
             </h1>
             <p className="text-muted-foreground mt-1">
-              {appointments.length} consulta{appointments.length !== 1 ? 's' : ''} agendada{appointments.length !== 1 ? 's' : ''}
+              {appointments.length} compromisso{appointments.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+
+          {/* Apenas visual por enquanto */}
+          <Button disabled className="opacity-50 cursor-not-allowed">
             <Plus className="h-4 w-4 mr-2" />
             Novo Agendamento
           </Button>
@@ -108,76 +110,64 @@ export default function Appointments() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-foreground">{appointments.length}</p>
-              <p className="text-sm text-muted-foreground">Próximas consultas</p>
+              <p className="text-sm text-muted-foreground">Próximos compromissos</p>
             </div>
           </div>
+
           <div className="glass-card rounded-xl p-4 flex items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
               <CheckCircle className="h-6 w-6 text-emerald-500" />
             </div>
             <div>
-              <p className="text-2xl font-semibold text-foreground">{confirmedCount}</p>
-              <p className="text-sm text-muted-foreground">Confirmadas</p>
+              <p className="text-2xl font-semibold text-foreground">{scheduledCount}</p>
+              <p className="text-sm text-muted-foreground">Agendados</p>
             </div>
           </div>
+
           <div className="glass-card rounded-xl p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <Clock className="h-6 w-6 text-amber-500" />
+            <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
+              <Clock className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-2xl font-semibold text-foreground">{pendingCount}</p>
-              <p className="text-sm text-muted-foreground">Aguardando confirmação</p>
+              <p className="text-2xl font-semibold text-foreground">{otherCount}</p>
+              <p className="text-sm text-muted-foreground">Encerrados / cancelados</p>
             </div>
           </div>
         </div>
 
-        {/* Appointments List */}
+        {/* Lista */}
         {loading ? (
-          <div className="text-center py-12 text-muted-foreground">
-            Carregando consultas...
-          </div>
+          <div className="text-center py-12 text-muted-foreground">Carregando agenda...</div>
         ) : appointments.length === 0 ? (
           <div className="text-center py-12 glass-card rounded-xl">
             <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">
-              Nenhuma consulta agendada
-            </h3>
-            <p className="text-muted-foreground">
-              As próximas consultas aparecerão aqui
-            </p>
+            <h3 className="text-lg font-medium text-foreground mb-2">Nenhum compromisso encontrado</h3>
+            <p className="text-muted-foreground">A agenda refletirá os horários ocupados</p>
           </div>
         ) : (
           <div className="space-y-4">
             {appointments.map((appointment) => (
-              <div
-                key={appointment.id}
-                className="glass-card rounded-xl p-5 hover:border-primary/30 transition-all"
-              >
+              <div key={appointment.id} className="glass-card rounded-xl p-5 hover:border-primary/30 transition-all">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">
                     <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
                       <User className="h-6 w-6 text-secondary-foreground" />
                     </div>
+
                     <div>
-                      <h3 className="font-semibold text-foreground text-lg">
-                        {appointment.lead?.name || 'Lead'}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {appointment.lead?.email || ''}
-                      </p>
-                      
+                      <h3 className="font-semibold text-foreground text-lg">{appointment.lead?.name || "Lead"}</h3>
+
+                      <p className="text-sm text-muted-foreground">{appointment.lead?.email || ""}</p>
+
                       <div className="flex items-center gap-4 mt-3">
                         <div className="flex items-center gap-2 text-sm">
                           <Calendar className="h-4 w-4 text-primary" />
-                          <span className="text-foreground">
-                            {format(new Date(appointment.scheduled_at), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                          </span>
+                          <span>{format(new Date(appointment.starts_at), "EEEE, dd 'de' MMMM", { locale: ptBR })}</span>
                         </div>
+
                         <div className="flex items-center gap-2 text-sm">
                           <Clock className="h-4 w-4 text-primary" />
-                          <span className="text-foreground">
-                            {format(new Date(appointment.scheduled_at), "HH:mm", { locale: ptBR })}
-                          </span>
+                          <span>{format(new Date(appointment.starts_at), "HH:mm", { locale: ptBR })}</span>
                         </div>
                       </div>
 
@@ -189,19 +179,9 @@ export default function Appointments() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    {appointment.confirmed ? (
-                      <span className="flex items-center gap-1.5 text-sm text-emerald-400 bg-emerald-400/10 px-3 py-1.5 rounded-full">
-                        <CheckCircle className="h-4 w-4" />
-                        Confirmado
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1.5 text-sm text-amber-400 bg-amber-400/10 px-3 py-1.5 rounded-full">
-                        <Clock className="h-4 w-4" />
-                        Aguardando
-                      </span>
-                    )}
-                  </div>
+                  <span className="flex items-center gap-1.5 text-sm text-primary bg-primary/10 px-3 py-1.5 rounded-full">
+                    {appointment.status}
+                  </span>
                 </div>
               </div>
             ))}
