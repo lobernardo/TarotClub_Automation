@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, User, CheckCircle, XCircle, Plus } from "lucide-react";
+import { Calendar, Clock, User, CheckCircle, XCircle, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,7 +19,7 @@ interface Appointment {
     name: string;
     email: string;
     whatsapp?: string | null;
-  }[]; // ⚠️ vem como ARRAY do Supabase
+  }[];
 }
 
 /* ───────────────── PAGE ───────────────── */
@@ -32,7 +32,7 @@ export default function Appointments() {
   async function fetchAppointments() {
     setLoading(true);
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("appointments")
       .select(
         `
@@ -51,10 +51,7 @@ export default function Appointments() {
       )
       .order("starts_at", { ascending: true });
 
-    if (!error) {
-      setAppointments((data ?? []) as Appointment[]);
-    }
-
+    setAppointments((data ?? []) as Appointment[]);
     setLoading(false);
   }
 
@@ -110,7 +107,10 @@ export default function Appointments() {
                       <div>
                         <h3 className="font-semibold text-lg">{lead?.name ?? "Lead"}</h3>
 
-                        <p className="text-sm text-muted-foreground">{lead?.email ?? ""}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {lead?.email ?? ""}
+                          {lead?.whatsapp ? ` • ${lead.whatsapp}` : ""}
+                        </p>
 
                         <div className="flex gap-4 mt-2 text-sm">
                           <span className="flex items-center gap-1">
@@ -173,19 +173,19 @@ function Stat({ title, value }: { title: string; value: number }) {
 
 function StatusBadge({ status }: { status: Appointment["status"] }) {
   if (status === "confirmed") {
-    return <Badge text="Confirmado" icon={<CheckCircle />} color="emerald" />;
+    return <Badge text="Confirmado" icon={<CheckCircle />} className="text-emerald-500" />;
   }
 
   if (status === "canceled") {
-    return <Badge text="Cancelado" icon={<XCircle />} color="red" />;
+    return <Badge text="Cancelado" icon={<XCircle />} className="text-red-500" />;
   }
 
-  return <Badge text="Solicitado" icon={<Clock />} color="amber" />;
+  return <Badge text="Solicitado" icon={<Clock />} className="text-amber-500" />;
 }
 
-function Badge({ text, icon, color }: any) {
+function Badge({ text, icon, className }: { text: string; icon: JSX.Element; className: string }) {
   return (
-    <span className={`flex items-center gap-2 text-${color}-500`}>
+    <span className={`flex items-center gap-2 ${className}`}>
       {icon}
       {text}
     </span>
@@ -201,8 +201,8 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
   const [notes, setNotes] = useState("");
 
   async function create() {
-    if (!leadId) {
-      alert("Selecione um lead");
+    if (!leadId || !date || !hour) {
+      alert("Preencha todos os campos");
       return;
     }
 
@@ -234,12 +234,34 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="modal">
-      <input placeholder="Lead ID" onChange={(e) => setLeadId(e.target.value)} />
-      <input type="date" onChange={(e) => setDate(e.target.value)} />
-      <input type="time" onChange={(e) => setHour(e.target.value)} />
-      <textarea placeholder="Anotações" onChange={(e) => setNotes(e.target.value)} />
-      <button onClick={create}>Criar</button>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-background rounded-xl p-6 w-full max-w-md space-y-4 relative">
+        <button onClick={onClose} className="absolute right-4 top-4 text-muted-foreground">
+          <X />
+        </button>
+
+        <h2 className="text-xl font-semibold">Novo Agendamento</h2>
+
+        <input
+          placeholder="Lead ID"
+          className="w-full border rounded px-3 py-2"
+          onChange={(e) => setLeadId(e.target.value)}
+        />
+
+        <input type="date" className="w-full border rounded px-3 py-2" onChange={(e) => setDate(e.target.value)} />
+
+        <input type="time" className="w-full border rounded px-3 py-2" onChange={(e) => setHour(e.target.value)} />
+
+        <textarea
+          placeholder="Anotações"
+          className="w-full border rounded px-3 py-2"
+          onChange={(e) => setNotes(e.target.value)}
+        />
+
+        <Button className="w-full" onClick={create}>
+          Criar agendamento
+        </Button>
+      </div>
     </div>
   );
 }
