@@ -1,101 +1,226 @@
+import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Calendar, Clock, CheckCircle, Plus, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Calendar, Clock, User, CheckCircle, XCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAppointments } from "@/hooks/useAppointments";
-import { AppointmentCard } from "@/components/appointments/AppointmentCard";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+interface Appointment {
+  id: string;
+  starts_at: string;
+  ends_at: string;
+  status: "requested" | "confirmed" | "canceled";
+  notes: string | null;
+  meet_link: string | null;
+  lead?: {
+    name: string;
+    email: string;
+    whatsapp?: string;
+  };
+}
 
 export default function Appointments() {
-  const { 
-    appointments, 
-    loading, 
-    stats, 
-    confirmAppointment, 
-    cancelAppointment 
-  } = useAppointments();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+
+  async function fetchAppointments() {
+    setLoading(true);
+
+    const { data } = await supabase
+      .from("appointments")
+      .select(
+        `
+        id,
+        starts_at,
+        ends_at,
+        status,
+        notes,
+        meet_link,
+        lead:lead_id (
+          name,
+          email,
+          whatsapp
+        )
+      `,
+      )
+      .order("starts_at", { ascending: true });
+
+    setAppointments(data ?? []);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const confirmedCount = appointments.filter((a) => a.status === "confirmed").length;
+  const requestedCount = appointments.filter((a) => a.status === "requested").length;
+  const canceledCount = appointments.filter((a) => a.status === "canceled").length;
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
+        {/* HEADER */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-bold flex items-center gap-3">
               <Calendar className="h-8 w-8 text-primary" />
               Agenda
             </h1>
-            <p className="text-muted-foreground mt-1">
-              {stats.total} compromisso{stats.total !== 1 ? "s" : ""} próximos
-            </p>
           </div>
 
-          {/* Placeholder - futuro botão de novo agendamento */}
-          <Button disabled className="opacity-50 cursor-not-allowed">
+          <Button onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Agendamento
           </Button>
         </div>
 
-        {/* Stats */}
+        {/* STATS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="glass-card rounded-xl p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <AlertCircle className="h-6 w-6 text-amber-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-semibold text-foreground">{stats.requested}</p>
-              <p className="text-sm text-muted-foreground">Solicitados</p>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-xl p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-              <CheckCircle className="h-6 w-6 text-emerald-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-semibold text-foreground">{stats.confirmed}</p>
-              <p className="text-sm text-muted-foreground">Confirmados</p>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-xl p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
-              <Clock className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-2xl font-semibold text-foreground">{stats.canceled}</p>
-              <p className="text-sm text-muted-foreground">Cancelados</p>
-            </div>
-          </div>
+          <Stat title="Solicitados" value={requestedCount} />
+          <Stat title="Confirmados" value={confirmedCount} />
+          <Stat title="Cancelados" value={canceledCount} />
         </div>
 
-        {/* List */}
+        {/* LISTA */}
         {loading ? (
-          <div className="text-center py-12 text-muted-foreground">
-            Carregando agenda...
-          </div>
+          <div className="text-center py-12">Carregando…</div>
         ) : appointments.length === 0 ? (
-          <div className="text-center py-12 glass-card rounded-xl">
-            <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">
-              Nenhum compromisso encontrado
-            </h3>
-            <p className="text-muted-foreground">
-              A agenda refletirá os horários ocupados
-            </p>
-          </div>
+          <div className="text-center py-12">Nenhum compromisso encontrado</div>
         ) : (
           <div className="space-y-4">
-            {appointments.map((appointment) => (
-              <AppointmentCard
-                key={appointment.id}
-                appointment={appointment}
-                onConfirm={confirmAppointment}
-                onCancel={cancelAppointment}
-              />
+            {appointments.map((ap) => (
+              <div key={ap.id} className="glass-card rounded-xl p-5">
+                <div className="flex justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg">{ap.lead?.name}</h3>
+                    <p className="text-sm text-muted-foreground">{ap.lead?.email}</p>
+
+                    <div className="flex gap-4 mt-2 text-sm">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {format(new Date(ap.starts_at), "EEEE, dd/MM", { locale: ptBR })}
+                      </span>
+
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {format(new Date(ap.starts_at), "HH:mm")} – {format(new Date(ap.ends_at), "HH:mm")}
+                      </span>
+                    </div>
+
+                    {ap.notes && <div className="mt-2 text-sm bg-muted/30 rounded px-3 py-2">{ap.notes}</div>}
+
+                    {ap.meet_link && (
+                      <a
+                        href={ap.meet_link}
+                        target="_blank"
+                        className="inline-block mt-2 text-blue-600 underline text-sm"
+                      >
+                        Entrar no Google Meet
+                      </a>
+                    )}
+                  </div>
+
+                  <StatusBadge status={ap.status} />
+                </div>
+              </div>
             ))}
           </div>
         )}
+
+        {showCreate && (
+          <CreateAppointmentModal
+            onClose={() => {
+              setShowCreate(false);
+              fetchAppointments();
+            }}
+          />
+        )}
       </div>
     </AppLayout>
+  );
+}
+
+/* ───────── COMPONENTES AUX ───────── */
+
+function Stat({ title, value }: { title: string; value: number }) {
+  return (
+    <div className="glass-card p-4 rounded-xl">
+      <p className="text-2xl font-semibold">{value}</p>
+      <p className="text-sm text-muted-foreground">{title}</p>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: Appointment["status"] }) {
+  if (status === "confirmed") {
+    return <Badge color="emerald" icon={<CheckCircle />} text="Confirmado" />;
+  }
+  if (status === "canceled") {
+    return <Badge color="red" icon={<XCircle />} text="Cancelado" />;
+  }
+  return <Badge color="amber" icon={<Clock />} text="Solicitado" />;
+}
+
+function Badge({ color, icon, text }: any) {
+  return (
+    <span className={`flex items-center gap-2 text-${color}-500`}>
+      {icon}
+      {text}
+    </span>
+  );
+}
+
+/* ───────── MODAL DE CRIAÇÃO ───────── */
+
+function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
+  const [leadId, setLeadId] = useState("");
+  const [date, setDate] = useState("");
+  const [hour, setHour] = useState("");
+  const [notes, setNotes] = useState("");
+
+  async function create() {
+    if (!leadId) {
+      alert("Selecione um lead");
+      return;
+    }
+
+    const startsAt = `${date}T${hour}:00-03:00`;
+    const endsAt = `${date}T${String(Number(hour.split(":")[0]) + 1).padStart(2, "0")}:00-03:00`;
+
+    const { data } = await supabase
+      .from("appointments")
+      .insert({
+        lead_id: leadId,
+        starts_at: startsAt,
+        ends_at: endsAt,
+        status: "confirmed",
+        notes,
+      })
+      .select("id")
+      .single();
+
+    await fetch("/functions/v1/sync_google_calendar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "push",
+        appointment_id: data.id,
+      }),
+    });
+
+    onClose();
+  }
+
+  return (
+    <div className="modal">
+      <input placeholder="Lead ID" onChange={(e) => setLeadId(e.target.value)} />
+      <input type="date" onChange={(e) => setDate(e.target.value)} />
+      <input type="time" onChange={(e) => setHour(e.target.value)} />
+      <textarea placeholder="Anotações" onChange={(e) => setNotes(e.target.value)} />
+      <button onClick={create}>Criar</button>
+    </div>
   );
 }
