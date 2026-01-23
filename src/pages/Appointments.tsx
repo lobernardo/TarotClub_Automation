@@ -22,7 +22,7 @@ interface Appointment {
   status: "requested" | "confirmed" | "canceled";
   notes: string | null;
   meet_link: string | null;
-  lead: Lead[]; // Supabase SEMPRE retorna array
+  lead: Lead[] | null;
 }
 
 /* ───────────── PAGE ───────────── */
@@ -35,7 +35,7 @@ export default function Appointments() {
   async function fetchAppointments() {
     setLoading(true);
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("appointments")
       .select(
         `
@@ -45,7 +45,7 @@ export default function Appointments() {
         status,
         notes,
         meet_link,
-        lead:leads!inner (
+        lead:leads (
           id,
           name,
           email,
@@ -55,10 +55,7 @@ export default function Appointments() {
       )
       .order("starts_at", { ascending: true });
 
-    if (!error) {
-      setAppointments(data as Appointment[]);
-    }
-
+    setAppointments((data ?? []) as Appointment[]);
     setLoading(false);
   }
 
@@ -101,7 +98,7 @@ export default function Appointments() {
         ) : (
           <div className="space-y-4">
             {appointments.map((ap) => {
-              const lead = ap.lead[0]; // agora SEMPRE existe
+              const lead = ap.lead?.[0] ?? null;
 
               return (
                 <div key={ap.id} className="glass-card p-5 rounded-xl">
@@ -112,12 +109,14 @@ export default function Appointments() {
                       </div>
 
                       <div>
-                        <h3 className="font-semibold text-lg">{lead.name}</h3>
+                        <h3 className="font-semibold text-lg">{lead ? lead.name : "Lead não vinculado"}</h3>
 
-                        <p className="text-sm text-muted-foreground">
-                          {lead.email}
-                          {lead.whatsapp && ` · ${lead.whatsapp}`}
-                        </p>
+                        {lead && (
+                          <p className="text-sm text-muted-foreground">
+                            {lead.email}
+                            {lead.whatsapp && ` · ${lead.whatsapp}`}
+                          </p>
+                        )}
 
                         <div className="flex gap-4 mt-2 text-sm">
                           <span className="flex items-center gap-1">
