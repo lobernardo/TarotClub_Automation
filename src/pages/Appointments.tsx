@@ -22,7 +22,7 @@ interface Appointment {
   status: "requested" | "confirmed" | "canceled";
   notes: string | null;
   meet_link: string | null;
-  lead: Lead[] | null;
+  lead: Lead[]; // join sempre vem como array
 }
 
 /* ───────────── PAGE ───────────── */
@@ -35,7 +35,7 @@ export default function Appointments() {
   async function fetchAppointments() {
     setLoading(true);
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("appointments")
       .select(
         `
@@ -45,7 +45,7 @@ export default function Appointments() {
         status,
         notes,
         meet_link,
-        lead:leads (
+        lead:lead_id (
           id,
           name,
           email,
@@ -55,7 +55,13 @@ export default function Appointments() {
       )
       .order("starts_at", { ascending: true });
 
-    setAppointments((data ?? []) as Appointment[]);
+    if (error) {
+      console.error("Erro ao buscar appointments:", error);
+      setAppointments([]);
+    } else {
+      setAppointments((data ?? []) as Appointment[]);
+    }
+
     setLoading(false);
   }
 
@@ -98,7 +104,7 @@ export default function Appointments() {
         ) : (
           <div className="space-y-4">
             {appointments.map((ap) => {
-              const lead = ap.lead?.[0] ?? null;
+              const lead = ap.lead?.[0]; // 👈 agora vem certo
 
               return (
                 <div key={ap.id} className="glass-card p-5 rounded-xl">
@@ -109,7 +115,7 @@ export default function Appointments() {
                       </div>
 
                       <div>
-                        <h3 className="font-semibold text-lg">{lead ? lead.name : "Lead não vinculado"}</h3>
+                        <h3 className="font-semibold text-lg">{lead?.name ?? "Lead não encontrado"}</h3>
 
                         {lead && (
                           <p className="text-sm text-muted-foreground">
