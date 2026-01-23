@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+/* ───────────────── TYPES ───────────────── */
+
 interface Appointment {
   id: string;
   starts_at: string;
@@ -16,9 +18,11 @@ interface Appointment {
   lead?: {
     name: string;
     email: string;
-    whatsapp?: string;
-  };
+    whatsapp?: string | null;
+  }[]; // ⚠️ vem como ARRAY do Supabase
 }
+
+/* ───────────────── PAGE ───────────────── */
 
 export default function Appointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -28,7 +32,7 @@ export default function Appointments() {
   async function fetchAppointments() {
     setLoading(true);
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("appointments")
       .select(
         `
@@ -47,7 +51,10 @@ export default function Appointments() {
       )
       .order("starts_at", { ascending: true });
 
-    setAppointments(data ?? []);
+    if (!error) {
+      setAppointments((data ?? []) as Appointment[]);
+    }
+
     setLoading(false);
   }
 
@@ -64,12 +71,10 @@ export default function Appointments() {
       <div className="space-y-6">
         {/* HEADER */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Calendar className="h-8 w-8 text-primary" />
-              Agenda
-            </h1>
-          </div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <Calendar className="h-8 w-8 text-primary" />
+            Agenda
+          </h1>
 
           <Button onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -84,49 +89,61 @@ export default function Appointments() {
           <Stat title="Cancelados" value={canceledCount} />
         </div>
 
-        {/* LISTA */}
+        {/* LIST */}
         {loading ? (
           <div className="text-center py-12">Carregando…</div>
         ) : appointments.length === 0 ? (
           <div className="text-center py-12">Nenhum compromisso encontrado</div>
         ) : (
           <div className="space-y-4">
-            {appointments.map((ap) => (
-              <div key={ap.id} className="glass-card rounded-xl p-5">
-                <div className="flex justify-between">
-                  <div>
-                    <h3 className="font-semibold text-lg">{ap.lead?.name}</h3>
-                    <p className="text-sm text-muted-foreground">{ap.lead?.email}</p>
+            {appointments.map((ap) => {
+              const lead = ap.lead?.[0];
 
-                    <div className="flex gap-4 mt-2 text-sm">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {format(new Date(ap.starts_at), "EEEE, dd/MM", { locale: ptBR })}
-                      </span>
+              return (
+                <div key={ap.id} className="glass-card rounded-xl p-5">
+                  <div className="flex justify-between items-start">
+                    <div className="flex gap-4">
+                      <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
+                        <User className="h-6 w-6" />
+                      </div>
 
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {format(new Date(ap.starts_at), "HH:mm")} – {format(new Date(ap.ends_at), "HH:mm")}
-                      </span>
+                      <div>
+                        <h3 className="font-semibold text-lg">{lead?.name ?? "Lead"}</h3>
+
+                        <p className="text-sm text-muted-foreground">{lead?.email ?? ""}</p>
+
+                        <div className="flex gap-4 mt-2 text-sm">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {format(new Date(ap.starts_at), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                          </span>
+
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {format(new Date(ap.starts_at), "HH:mm")} – {format(new Date(ap.ends_at), "HH:mm")}
+                          </span>
+                        </div>
+
+                        {ap.notes && <div className="mt-2 text-sm bg-muted/30 rounded px-3 py-2">{ap.notes}</div>}
+
+                        {ap.meet_link && (
+                          <a
+                            href={ap.meet_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block mt-2 text-blue-600 underline text-sm"
+                          >
+                            Entrar no Google Meet
+                          </a>
+                        )}
+                      </div>
                     </div>
 
-                    {ap.notes && <div className="mt-2 text-sm bg-muted/30 rounded px-3 py-2">{ap.notes}</div>}
-
-                    {ap.meet_link && (
-                      <a
-                        href={ap.meet_link}
-                        target="_blank"
-                        className="inline-block mt-2 text-blue-600 underline text-sm"
-                      >
-                        Entrar no Google Meet
-                      </a>
-                    )}
+                    <StatusBadge status={ap.status} />
                   </div>
-
-                  <StatusBadge status={ap.status} />
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -143,7 +160,7 @@ export default function Appointments() {
   );
 }
 
-/* ───────── COMPONENTES AUX ───────── */
+/* ───────────────── COMPONENTS ───────────────── */
 
 function Stat({ title, value }: { title: string; value: number }) {
   return (
@@ -156,15 +173,17 @@ function Stat({ title, value }: { title: string; value: number }) {
 
 function StatusBadge({ status }: { status: Appointment["status"] }) {
   if (status === "confirmed") {
-    return <Badge color="emerald" icon={<CheckCircle />} text="Confirmado" />;
+    return <Badge text="Confirmado" icon={<CheckCircle />} color="emerald" />;
   }
+
   if (status === "canceled") {
-    return <Badge color="red" icon={<XCircle />} text="Cancelado" />;
+    return <Badge text="Cancelado" icon={<XCircle />} color="red" />;
   }
-  return <Badge color="amber" icon={<Clock />} text="Solicitado" />;
+
+  return <Badge text="Solicitado" icon={<Clock />} color="amber" />;
 }
 
-function Badge({ color, icon, text }: any) {
+function Badge({ text, icon, color }: any) {
   return (
     <span className={`flex items-center gap-2 text-${color}-500`}>
       {icon}
@@ -173,7 +192,7 @@ function Badge({ color, icon, text }: any) {
   );
 }
 
-/* ───────── MODAL DE CRIAÇÃO ───────── */
+/* ───────────────── MODAL ───────────────── */
 
 function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
   const [leadId, setLeadId] = useState("");
