@@ -105,13 +105,30 @@ export interface MessageTemplate {
   updated_at: string;
 }
 
+// Appointment status matching database constraint
+export type AppointmentStatus = "requested" | "confirmed" | "canceled";
+
 export interface Appointment {
   id: string;
   lead_id: string;
-  scheduled_at: string;
-  confirmed_at: string | null;
+  status: AppointmentStatus;
+  starts_at: string;
+  ends_at: string | null;
+  google_calendar_event_id: string | null;
   notes: string | null;
   created_at: string;
+  updated_at: string;
+}
+
+// Appointment with joined lead data (for UI display)
+export interface AppointmentWithLead extends Appointment {
+  lead: {
+    id: string;
+    name: string;
+    email: string;
+    whatsapp: string;
+    stage: LeadStage;
+  } | null;
 }
 
 export interface Subscription {
