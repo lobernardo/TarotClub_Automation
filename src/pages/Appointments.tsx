@@ -98,7 +98,7 @@ export default function Appointments() {
         ) : (
           <div className="space-y-4">
             {appointments.map((ap) => {
-              const lead = ap.lead?.[0];
+              const lead = Array.isArray(ap.lead) && ap.lead.length > 0 ? ap.lead[0] : null;
 
               return (
                 <div key={ap.id} className="glass-card p-5 rounded-xl">
