@@ -56,54 +56,33 @@ function Stat({ title, value }: { title: string; value: number }) {
 
 function StatusBadge({ status }: { status: Appointment["status"] }) {
   if (status === "confirmed") {
-    return <Badge text="Confirmado" color="emerald" />;
+    return <Badge text="Confirmado" icon={<CheckCircle className="h-4 w-4" />} color="emerald" />;
   }
   if (status === "canceled") {
-    return <Badge text="Cancelado" color="red" />;
+    return <Badge text="Cancelado" icon={<XCircle className="h-4 w-4" />} color="red" />;
   }
-  return <Badge text="Solicitado" color="amber" />;
+  return <Badge text="Solicitado" icon={<Clock className="h-4 w-4" />} color="amber" />;
 }
 
-function Badge({ text, color }: { text: string; color: "emerald" | "red" | "amber" }) {
+function Badge({ text, icon, color }: { text: string; icon: React.ReactNode; color: "emerald" | "red" | "amber" }) {
   const cls = color === "emerald" ? "text-emerald-500" : color === "red" ? "text-red-500" : "text-amber-500";
 
-  return <span className={`font-medium ${cls}`}>{text}</span>;
+  return (
+    <span className={`flex items-center gap-2 ${cls}`}>
+      {icon}
+      {text}
+    </span>
+  );
 }
 
-/* ───────────── MODALS ───────────── */
+/* ───────────── MODAL ───────────── */
 
-function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [leadId, setLeadId] = useState("");
-  const [date, setDate] = useState("");
-  const [hour, setHour] = useState("");
-  const [notes, setNotes] = useState("");
+function AppointmentModal({ appointment, onClose }: { appointment?: Appointment; onClose: () => void }) {
+  const [notes, setNotes] = useState(appointment?.notes ?? "");
 
-  useEffect(() => {
-    supabase
-      .from("leads")
-      .select("id, name, email")
-      .order("name")
-      .then(({ data }) => setLeads(data ?? []));
-  }, []);
-
-  async function create() {
-    if (!leadId || !date || !hour) {
-      alert("Preencha todos os campos");
-      return;
-    }
-
-    const starts_at = `${date}T${hour}:00-03:00`;
-    const ends_at = `${date}T${String(Number(hour.split(":")[0]) + 1).padStart(2, "0")}:00-03:00`;
-
-    await supabase.from("appointments").insert({
-      lead_id: leadId,
-      starts_at,
-      ends_at,
-      status: "confirmed",
-      notes,
-    });
-
+  async function save() {
+    if (!appointment) return;
+    await supabase.from("appointments").update({ notes }).eq("id", appointment.id);
     onClose();
   }
 
@@ -111,29 +90,19 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-background rounded-xl p-6 w-full max-w-md space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Novo Agendamento</h2>
+          <h2 className="text-xl font-semibold">Editar Agendamento</h2>
           <button onClick={onClose}>✕</button>
         </div>
 
-        <select className="w-full border rounded p-2" value={leadId} onChange={(e) => setLeadId(e.target.value)}>
-          <option value="">Selecione o lead</option>
-          {leads.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name} — {l.email}
-            </option>
-          ))}
-        </select>
-
-        <input type="date" className="w-full border rounded p-2" onChange={(e) => setDate(e.target.value)} />
-        <input type="time" className="w-full border rounded p-2" onChange={(e) => setHour(e.target.value)} />
         <textarea
-          placeholder="Anotações"
           className="w-full border rounded p-2"
+          placeholder="Anotações"
+          value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
 
-        <Button className="w-full" onClick={create}>
-          Criar agendamento
+        <Button className="w-full" onClick={save}>
+          Salvar
         </Button>
       </div>
     </div>
@@ -146,12 +115,11 @@ export default function Appointments() {
   const [rows, setRows] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Appointment | null>(null);
-  const [creating, setCreating] = useState(false);
 
   async function fetchAppointments() {
     setLoading(true);
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("appointments")
       .select(
         `
@@ -171,7 +139,13 @@ export default function Appointments() {
       )
       .order("starts_at", { ascending: true });
 
-    setRows((data ?? []) as AppointmentRow[]);
+    if (error) {
+      console.error(error);
+      setRows([]);
+    } else {
+      setRows((data ?? []) as AppointmentRow[]);
+    }
+
     setLoading(false);
   }
 
@@ -188,6 +162,10 @@ export default function Appointments() {
     [rows],
   );
 
+  const requested = appointments.filter((a) => a.status === "requested").length;
+  const confirmed = appointments.filter((a) => a.status === "confirmed").length;
+  const canceled = appointments.filter((a) => a.status === "canceled").length;
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -197,22 +175,97 @@ export default function Appointments() {
             Agenda
           </h1>
 
-          <Button onClick={() => setCreating(true)}>
+          <Button onClick={() => alert("Fluxo de criação será integrado no próximo passo.")}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Agendamento
           </Button>
         </div>
 
-        {appointments.map((ap) => (
-          <div key={ap.id} className="glass-card p-5 rounded-xl">
-            <h3 className="font-semibold">{ap.lead?.name ?? "Lead não vinculado"}</h3>
-          </div>
-        ))}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Stat title="Solicitados" value={requested} />
+          <Stat title="Confirmados" value={confirmed} />
+          <Stat title="Cancelados" value={canceled} />
+        </div>
 
-        {creating && (
-          <CreateAppointmentModal
+        {loading ? (
+          <div className="text-center py-10">Carregando…</div>
+        ) : appointments.length === 0 ? (
+          <div className="text-center py-10">Nenhum agendamento</div>
+        ) : (
+          <div className="space-y-4">
+            {appointments.map((ap) => (
+              <div key={ap.id} className="glass-card p-5 rounded-xl">
+                <div className="flex justify-between items-start">
+                  <div className="flex gap-4">
+                    <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
+                      <User className="h-5 w-5" />
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-lg">{ap.lead?.name ?? "Lead não vinculado"}</h3>
+
+                      <p className="text-sm text-muted-foreground">
+                        {ap.lead?.email ?? ""}
+                        {ap.lead?.whatsapp ? ` · ${ap.lead.whatsapp}` : ""}
+                      </p>
+
+                      <div className="flex gap-4 mt-2 text-sm">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {format(new Date(ap.starts_at), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                        </span>
+
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          {format(new Date(ap.starts_at), "HH:mm")} – {format(new Date(ap.ends_at), "HH:mm")}
+                        </span>
+                      </div>
+
+                      {ap.notes && <div className="mt-2 text-sm bg-muted/30 rounded px-3 py-2">{ap.notes}</div>}
+
+                      {ap.meet_link && (
+                        <a
+                          href={ap.meet_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 mt-3 text-sm text-blue-600 underline"
+                        >
+                          <Video className="h-4 w-4" />
+                          Entrar no Google Meet
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <StatusBadge status={ap.status} />
+
+                    <Button size="icon" variant="ghost" onClick={() => setEditing(ap)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={async () => {
+                        await supabase.from("appointments").update({ status: "canceled" }).eq("id", ap.id);
+                        fetchAppointments();
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {editing && (
+          <AppointmentModal
+            appointment={editing}
             onClose={() => {
-              setCreating(false);
+              setEditing(null);
               fetchAppointments();
             }}
           />
