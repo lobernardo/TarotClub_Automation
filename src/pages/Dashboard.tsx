@@ -52,29 +52,24 @@ export default function Dashboard() {
       try {
         const { count: pendingCount } = await supabase
           .from("message_queue")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "scheduled");
+          .select(
+            `
+            id,
+            leads!inner (
+              id,
+              stage
+            )
+            `,
+            { count: "exact", head: true },
+          )
+          .eq("status", "scheduled")
+          .eq("leads.stage", "checkout_started");
 
         if (pendingCount !== null) {
           setPendingFollowUps(pendingCount);
         }
       } catch (err) {
         console.log("Could not fetch pending follow-ups:", err);
-      }
-
-      // Recent events
-      try {
-        const { data: eventsData } = await supabase
-          .from("events")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(5);
-
-        if (eventsData) {
-          setRecentEvents(eventsData as Event[]);
-        }
-      } catch (err) {
-        console.log("Could not fetch events:", err);
       }
 
       // Funnel data - count leads by stage
