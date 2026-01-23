@@ -5,11 +5,16 @@
  * IMPORTANT:
  * - deleteLead cancels queue items but does NOT trigger automations
  * - updateLead only updates basic fields (name, email, whatsapp, notes)
+ *
+ * RULE (canonical):
+ * - Follow-ups are scheduled ONLY in stage `checkout_started`.
+ * - When exiting `checkout_started`, cancel ONLY messages that were scheduled BEFORE the stage change,
+ *   so onboarding messages scheduled AFTER becoming `subscribed_active` are protected.
  */
 
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Lead, LeadStage } from "@/types/database";
+import { LeadStage } from "@/types/database";
 import { toast } from "sonner";
 import { normalizeWhatsapp } from "@/lib/utils";
 
@@ -33,20 +38,29 @@ export function useLeadActions(onUpdate?: () => void) {
           .eq("id", leadId)
           .single();
 
-        if (fetchError) {
+        if (fetchError || !lead) {
           console.error("Error fetching lead:", fetchError);
           toast.error("Erro ao buscar lead");
           return false;
         }
 
-        const oldStage = lead.stage;
+        const oldStage = lead.stage as LeadStage;
+
+        // No-op guard (avoid unnecessary writes + cancellations)
+        if (oldStage === newStage) {
+          toast.message("Lead já está neste estágio");
+          return true;
+        }
+
+        // Use a single timestamp for consistency across updates/logs/cancel
+        const stageChangedAt = new Date().toISOString();
 
         // Update lead stage
         const { error: updateError } = await supabase
           .from("leads")
           .update({
             stage: newStage,
-            updated_at: new Date().toISOString(),
+            updated_at: stageChangedAt,
           })
           .eq("id", leadId);
 
@@ -71,15 +85,16 @@ export function useLeadActions(onUpdate?: () => void) {
           console.log("Could not log stage change event:", eventErr);
         }
 
-        // CANONICAL RULE: Cancel checkout follow-ups ONLY when leaving checkout_started
-        // This protects onboarding messages (created AFTER stage change to subscribed_active)
-        if (oldStage === 'checkout_started' && newStage !== 'checkout_started') {
-          const stageChangedAt = new Date().toISOString();
-          
+        /**
+         * Cancel checkout follow-ups ONLY when exiting checkout_started.
+         * We cancel scheduled messages created up to the stage change timestamp.
+         * This protects onboarding messages that are scheduled after becoming subscribed_active.
+         *
+         * NOTE: This is the correct canonical implementation. We intentionally do NOT cancel by mq.stage.
+         */
+        if (oldStage === "checkout_started" && newStage !== "checkout_started") {
           try {
-            // Cancel all scheduled messages created BEFORE the stage change
-            // Onboarding messages are safe because they're created AFTER this point
-            const { error: cancelError, count } = await supabase
+            await supabase
               .from("message_queue")
               .update({
                 status: "canceled",
@@ -90,14 +105,8 @@ export function useLeadActions(onUpdate?: () => void) {
               .eq("lead_id", leadId)
               .eq("status", "scheduled")
               .lte("created_at", stageChangedAt);
-            
-            if (cancelError) {
-              console.error("Error canceling checkout follow-ups:", cancelError);
-            } else {
-              console.log(`Canceled ${count ?? 'unknown'} checkout follow-ups for lead ${leadId}`);
-            }
           } catch (queueErr) {
-            console.log("Could not cancel queue items:", queueErr);
+            console.log("Could not cancel checkout follow-ups:", queueErr);
           }
         }
 
@@ -158,6 +167,8 @@ export function useLeadActions(onUpdate?: () => void) {
   const deleteLead = useCallback(
     async (leadId: string): Promise<boolean> => {
       try {
+        const nowIso = new Date().toISOString();
+
         // 1. Cancel all pending queue items (without triggering automations)
         // This is a silent cleanup, not an automation trigger
         try {
@@ -166,8 +177,8 @@ export function useLeadActions(onUpdate?: () => void) {
             .update({
               status: "canceled",
               cancel_reason: "lead_deleted",
-              canceled_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
+              canceled_at: nowIso,
+              updated_at: nowIso,
             })
             .eq("lead_id", leadId)
             .eq("status", "scheduled");
