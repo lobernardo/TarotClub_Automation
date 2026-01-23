@@ -75,14 +75,20 @@ function Badge({ text, icon, color }: { text: string; icon: React.ReactNode; col
   );
 }
 
-/* ───────────── MODAL ───────────── */
+/* ───────────── MODAL (EDIT NOTES) ───────────── */
 
 function AppointmentModal({ appointment, onClose }: { appointment?: Appointment; onClose: () => void }) {
   const [notes, setNotes] = useState(appointment?.notes ?? "");
 
+  useEffect(() => {
+    setNotes(appointment?.notes ?? "");
+  }, [appointment?.id]);
+
   async function save() {
     if (!appointment) return;
+
     await supabase.from("appointments").update({ notes }).eq("id", appointment.id);
+
     onClose();
   }
 
@@ -109,12 +115,134 @@ function AppointmentModal({ appointment, onClose }: { appointment?: Appointment;
   );
 }
 
+/* ───────────── MODAL (CREATE) ───────────── */
+
+function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadId, setLeadId] = useState("");
+  const [date, setDate] = useState("");
+  const [hour, setHour] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("leads")
+      .select("id, name, email, whatsapp")
+      .order("name")
+      .then(({ data }) => setLeads((data ?? []) as Lead[]));
+  }, []);
+
+  function buildIsoWithOffset(d: string, h: string) {
+    // Mantém o padrão que vocês já usavam (-03:00)
+    return `${d}T${h}:00-03:00`;
+  }
+
+  async function create() {
+    if (!leadId || !date || !hour) {
+      alert("Preencha lead, data e hora");
+      return;
+    }
+
+    setSaving(true);
+
+    const starts_at = buildIsoWithOffset(date, hour);
+
+    // ends_at = starts_at + 1h (sem gambi de string)
+    const startDate = new Date(starts_at);
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+    const ends_at = endDate.toISOString(); // ok pro banco (timestamptz)
+
+    const { data, error } = await supabase
+      .from("appointments")
+      .insert({
+        lead_id: leadId,
+        starts_at,
+        ends_at,
+        status: "confirmed",
+        notes: notes || null,
+      })
+      .select("id")
+      .single();
+
+    if (error || !data?.id) {
+      console.error("create appointment error:", error);
+      alert("Erro ao criar agendamento. Veja o console.");
+      setSaving(false);
+      return;
+    }
+
+    // Se a edge function existir, beleza. Se não existir/der erro, não quebra o create.
+    try {
+      await fetch("/functions/v1/sync_google_calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "push",
+          appointment_id: data.id,
+        }),
+      });
+    } catch (e) {
+      console.warn("sync_google_calendar not executed:", e);
+    }
+
+    setSaving(false);
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-background rounded-xl p-6 w-full max-w-md space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Novo Agendamento</h2>
+          <button onClick={onClose}>✕</button>
+        </div>
+
+        <select className="w-full border rounded p-2" value={leadId} onChange={(e) => setLeadId(e.target.value)}>
+          <option value="">Selecione o lead</option>
+          {leads.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name} — {l.email}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="date"
+          className="w-full border rounded p-2"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+
+        <input
+          type="time"
+          className="w-full border rounded p-2"
+          value={hour}
+          onChange={(e) => setHour(e.target.value)}
+        />
+
+        <textarea
+          placeholder="Anotações"
+          className="w-full border rounded p-2"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+
+        <Button className="w-full" onClick={create} disabled={saving}>
+          {saving ? "Criando..." : "Criar agendamento"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /* ───────────── PAGE ───────────── */
 
 export default function Appointments() {
   const [rows, setRows] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Appointment | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   async function fetchAppointments() {
     setLoading(true);
@@ -140,12 +268,13 @@ export default function Appointments() {
       .order("starts_at", { ascending: true });
 
     if (error) {
-      console.error(error);
+      console.error("fetchAppointments error:", error);
       setRows([]);
-    } else {
-      setRows((data ?? []) as AppointmentRow[]);
+      setLoading(false);
+      return;
     }
 
+    setRows((data ?? []) as AppointmentRow[]);
     setLoading(false);
   }
 
@@ -153,14 +282,17 @@ export default function Appointments() {
     fetchAppointments();
   }, []);
 
-  const appointments: Appointment[] = useMemo(
-    () =>
-      rows.map((r) => ({
-        ...r,
-        lead: normalizeLead(r.lead),
-      })),
-    [rows],
-  );
+  const appointments: Appointment[] = useMemo(() => {
+    return rows.map((r) => ({
+      id: r.id,
+      starts_at: r.starts_at,
+      ends_at: r.ends_at,
+      status: r.status,
+      notes: r.notes,
+      meet_link: r.meet_link,
+      lead: normalizeLead(r.lead),
+    }));
+  }, [rows]);
 
   const requested = appointments.filter((a) => a.status === "requested").length;
   const confirmed = appointments.filter((a) => a.status === "confirmed").length;
@@ -169,24 +301,28 @@ export default function Appointments() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* HEADER */}
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Calendar className="h-8 w-8 text-primary" />
             Agenda
           </h1>
 
-          <Button onClick={() => alert("Fluxo de criação será integrado no próximo passo.")}>
+          {/* ✅ AQUI É O ÚNICO PONTO QUE FOI "CONSERTO DO BOTÃO" */}
+          <Button onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Agendamento
           </Button>
         </div>
 
+        {/* STATS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Stat title="Solicitados" value={requested} />
           <Stat title="Confirmados" value={confirmed} />
           <Stat title="Cancelados" value={canceled} />
         </div>
 
+        {/* LIST */}
         {loading ? (
           <div className="text-center py-10">Carregando…</div>
         ) : appointments.length === 0 ? (
@@ -212,7 +348,9 @@ export default function Appointments() {
                       <div className="flex gap-4 mt-2 text-sm">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
-                          {format(new Date(ap.starts_at), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                          {format(new Date(ap.starts_at), "EEEE, dd 'de' MMMM", {
+                            locale: ptBR,
+                          })}
                         </span>
 
                         <span className="flex items-center gap-1">
@@ -240,13 +378,14 @@ export default function Appointments() {
                   <div className="flex items-center gap-3">
                     <StatusBadge status={ap.status} />
 
-                    <Button size="icon" variant="ghost" onClick={() => setEditing(ap)}>
+                    <Button size="icon" variant="ghost" onClick={() => setEditing(ap)} title="Editar">
                       <Pencil className="h-4 w-4" />
                     </Button>
 
                     <Button
                       size="icon"
                       variant="ghost"
+                      title="Cancelar"
                       onClick={async () => {
                         await supabase.from("appointments").update({ status: "canceled" }).eq("id", ap.id);
                         fetchAppointments();
@@ -266,6 +405,15 @@ export default function Appointments() {
             appointment={editing}
             onClose={() => {
               setEditing(null);
+              fetchAppointments();
+            }}
+          />
+        )}
+
+        {showCreate && (
+          <CreateAppointmentModal
+            onClose={() => {
+              setShowCreate(false);
               fetchAppointments();
             }}
           />
