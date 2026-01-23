@@ -22,7 +22,7 @@ interface Appointment {
   status: "requested" | "confirmed" | "canceled";
   notes: string | null;
   meet_link: string | null;
-  lead: Lead[]; // retorno do Supabase é ARRAY
+  lead: Lead | null; // ✅ OBJETO, não array
 }
 
 /* ───────────── PAGE ───────────── */
@@ -55,7 +55,10 @@ export default function Appointments() {
       )
       .order("starts_at", { ascending: true });
 
-    if (!error) {
+    if (error) {
+      console.error("Erro ao buscar agendamentos:", error);
+      setAppointments([]);
+    } else {
       setAppointments((data ?? []) as Appointment[]);
     }
 
@@ -101,8 +104,7 @@ export default function Appointments() {
         ) : (
           <div className="space-y-4">
             {appointments.map((ap) => {
-              // NORMALIZAÇÃO DEFINITIVA (sem fallback mentiroso)
-              const lead: Lead | null = Array.isArray(ap.lead) && ap.lead.length > 0 ? ap.lead[0] : null;
+              const lead = ap.lead;
 
               return (
                 <div key={ap.id} className="glass-card p-5 rounded-xl">
@@ -113,12 +115,14 @@ export default function Appointments() {
                       </div>
 
                       <div>
-                        <h3 className="font-semibold text-lg">{lead ? lead.name : "—"}</h3>
+                        <h3 className="font-semibold text-lg">{lead?.name ?? "—"}</h3>
 
-                        <p className="text-sm text-muted-foreground">
-                          {lead?.email ?? ""}
-                          {lead?.whatsapp ? ` · ${lead.whatsapp}` : ""}
-                        </p>
+                        {lead && (
+                          <p className="text-sm text-muted-foreground">
+                            {lead.email}
+                            {lead.whatsapp && ` · ${lead.whatsapp}`}
+                          </p>
+                        )}
 
                         <div className="flex gap-4 mt-2 text-sm">
                           <span className="flex items-center gap-1">
@@ -237,7 +241,7 @@ function CreateAppointmentModal({ onClose }: { onClose: () => void }) {
       .select("id")
       .single();
 
-    if (!error && data?.id) {
+    if (!error && data) {
       await fetch("/functions/v1/sync_google_calendar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
