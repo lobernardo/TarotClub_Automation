@@ -142,7 +142,7 @@ export default function Templates() {
                       template={template}
                       onEdit={handleEditTemplate}
                       onToggleActive={toggleActive}
-                      scheduledCount={countScheduledForTemplate(template.template_key)}
+                      //scheduledCount={countScheduledForTemplate(template.template_key)}
                       eligibleCount={getCountForStage(template.stage)}
                     />
                   ))}
