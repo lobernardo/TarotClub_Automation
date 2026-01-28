@@ -10,6 +10,7 @@ import {
   Settings,
   LogOut,
   Heart,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoDourado from "@/assets/logo_dourado_transparent.png";
@@ -22,6 +23,7 @@ const navigation = [
   //{ name: 'Fila de Mensagens', href: '/messages', icon: MessageSquare },
   { name: "Clientes Ativos", href: "/clients", icon: UserCheck },
   { name: "Performance", href: "/performance", icon: BarChart3 },
+  { name: "Performance do Agente", href: "/agent-performance", icon: Bot },
   //{ name: "Agenda", href: "/appointments", icon: Calendar },
 ];
 
