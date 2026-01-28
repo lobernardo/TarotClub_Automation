@@ -1,5 +1,4 @@
 import { Lead } from "@/types/database";
-import { StageBadge } from "@/components/ui/StageBadge";
 import { Clock, MessageCircle, MessageSquare, GripVertical } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -38,10 +37,9 @@ export function LeadCard({ lead, onClick, isDragging }: LeadCardProps) {
             <GripVertical className="h-4 w-4 text-muted-foreground/50 mt-0.5 flex-shrink-0" />
             <div>
               <h4 className="font-medium text-foreground">{lead.name}</h4>
-              <p className="text-sm text-muted-foreground truncate max-w-[160px]">{lead.email}</p>
+              <p className="text-sm text-muted-foreground truncate max-w-[180px]">{lead.email}</p>
             </div>
           </div>
-          <StageBadge stage={lead.stage} />
         </div>
 
         <div className="flex items-center gap-4 text-xs text-muted-foreground">

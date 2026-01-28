@@ -76,6 +76,7 @@ function getStageColorClass(stage: LeadStage): string {
     conectado: 'bg-cyan-500',
     payment_pending: 'bg-amber-500',
     subscribed_active: 'bg-emerald-500',
+    subscribed_onboarding: 'bg-teal-500',
     subscribed_past_due: 'bg-orange-500',
     subscribed_canceled: 'bg-red-500',
     nurture: 'bg-violet-500',

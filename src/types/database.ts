@@ -1,12 +1,13 @@
 // Types matching existing Supabase schema
 
-// LEAD STAGES - Single source of truth (PRD complete - 9 stages)
+// LEAD STAGES - Single source of truth (PRD complete - 11 stages)
 export type LeadStage =
   | "captured_form"
   | "checkout_started"
   | "conectado"
   | "payment_pending"
   | "subscribed_active"
+  | "subscribed_onboarding"
   | "subscribed_past_due"
   | "subscribed_canceled"
   | "nurture"
@@ -20,6 +21,7 @@ export const ALL_STAGES: LeadStage[] = [
   "conectado",
   "payment_pending",
   "subscribed_active",
+  "subscribed_onboarding",
   "subscribed_past_due",
   "subscribed_canceled",
   "nurture",
@@ -33,6 +35,7 @@ export const CORE_STAGES: LeadStage[] = [
   "conectado",
   "payment_pending",
   "subscribed_active",
+  "subscribed_onboarding",
   "subscribed_past_due",
   "subscribed_canceled",
   "nurture",
@@ -50,8 +53,10 @@ export type EventType =
   | "silence_applied"
   | "welcome_sent"
   | "group_invite_sent"
+  | "group_join_confirmed"
   | "appointment_requested"
-  | "appointment_confirmed";
+  | "appointment_confirmed"
+  | "stage_changed";
 
 export interface Lead {
   id: string;
@@ -168,9 +173,15 @@ export const STAGE_CONFIG: Record<LeadStage, { label: string; color: string; des
     isCore: true,
   },
   subscribed_active: {
-    label: "Assinatura Ativa",
+    label: "Cliente Ativo",
     color: "stage-subscribed_active",
-    description: "Assinatura ativa",
+    description: "Cliente confirmou entrada no grupo",
+    isCore: true,
+  },
+  subscribed_onboarding: {
+    label: "Onboarding Enviado",
+    color: "stage-subscribed_onboarding",
+    description: "Link do grupo enviado, aguardando confirmação",
     isCore: true,
   },
   subscribed_past_due: {
