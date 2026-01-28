@@ -17,12 +17,12 @@ import logoDourado from "@/assets/logo_dourado_transparent.png";
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "CRM Kanban", href: "/crm", icon: Users },
-  { name: "Templates (Venda)", href: "/templates", icon: FileText },
-  { name: "Onboarding", href: "/onboarding", icon: Heart },
+  //{ name: "Templates (Venda)", href: "/templates", icon: FileText },
+  //{ name: "Onboarding", href: "/onboarding", icon: Heart },
   //{ name: 'Fila de Mensagens', href: '/messages', icon: MessageSquare },
   { name: "Clientes Ativos", href: "/clients", icon: UserCheck },
   { name: "Performance", href: "/performance", icon: BarChart3 },
-  { name: "Agenda", href: "/appointments", icon: Calendar },
+  //{ name: "Agenda", href: "/appointments", icon: Calendar },
 ];
 
 export function AppSidebar() {
