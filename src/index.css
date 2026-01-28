@@ -177,6 +177,11 @@
     @apply bg-[hsl(var(--stage-active))/0.1] text-[hsl(var(--stage-active))];
   }
 
+  .stage-subscribed_onboarding,
+  .stage-onboarding {
+    @apply bg-[hsl(168_55%_50%)/0.1] text-[hsl(168_55%_50%)];
+  }
+
   .stage-subscribed_past_due,
   .stage-past-due {
     @apply bg-[hsl(var(--stage-past-due))/0.1] text-[hsl(var(--stage-past-due))];
