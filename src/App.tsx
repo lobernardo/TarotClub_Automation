@@ -10,6 +10,7 @@ import Messages from "./pages/Messages";
 import Templates from "./pages/Templates";
 import Onboarding from "./pages/Onboarding";
 import Performance from "./pages/Performance";
+import AgentPerformance from "./pages/AgentPerformance";
 import Appointments from "./pages/Appointments";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/templates" element={<Templates />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/performance" element={<Performance />} />
+          <Route path="/agent-performance" element={<AgentPerformance />} />
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
