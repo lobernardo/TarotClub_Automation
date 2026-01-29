@@ -1,6 +1,6 @@
 // Types matching existing Supabase schema
 
-// LEAD STAGES - Single source of truth (PRD complete - 11 stages)
+// LEAD STAGES - Single source of truth (PRD complete - 12 stages)
 export type LeadStage =
   | "captured_form"
   | "checkout_started"
@@ -43,7 +43,7 @@ export const CORE_STAGES: LeadStage[] = [
   "subscribed_canceled",
   "nurture",
   "lost",
-  "blocked"
+  "blocked",
 ];
 
 export type EventType =
@@ -223,4 +223,5 @@ export const STAGE_CONFIG: Record<LeadStage, { label: string; color: string; des
     description: 'Lead chegou direto pelo WhatsApp, aguardando dados',
     isCore: true, 
   },
+};
 };
