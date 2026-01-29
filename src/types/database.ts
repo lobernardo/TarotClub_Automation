@@ -1,6 +1,6 @@
 // Types matching existing Supabase schema
 
-// LEAD STAGES - Single source of truth (PRD complete - 12 stages)
+// LEAD STAGES - Single source of truth (PRD complete - 11 stages)
 export type LeadStage =
   | "captured_form"
   | "checkout_started"
@@ -12,7 +12,7 @@ export type LeadStage =
   | "subscribed_canceled"
   | "nurture"
   | "lost"
-  | "blocked",
+  | "blocked"
   | "lead_captured";
 
 // All backend stages (for type compatibility)
