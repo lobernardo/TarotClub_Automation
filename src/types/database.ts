@@ -43,7 +43,7 @@ export const CORE_STAGES: LeadStage[] = [
   "subscribed_canceled",
   "nurture",
   "lost",
-  "blocked",
+  "blocked"
 ];
 
 export type EventType =
@@ -224,4 +224,3 @@ export const STAGE_CONFIG: Record<LeadStage, { label: string; color: string; des
     isCore: true, 
   },
 };
-
