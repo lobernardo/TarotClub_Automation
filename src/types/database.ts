@@ -223,5 +223,5 @@ export const STAGE_CONFIG: Record<LeadStage, { label: string; color: string; des
     description: 'Lead chegou direto pelo WhatsApp, aguardando dados',
     isCore: true, 
   },
-
 };
+
