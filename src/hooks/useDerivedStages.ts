@@ -138,7 +138,7 @@ export function deriveCRMStage(lead: Lead, leadEvents: Event[]): DerivedCRMStage
   // Estágios que mapeiam diretamente
   const directMappings: Partial<Record<LeadStage, DerivedCRMStage>> = {
     checkout_started: "checkout_started",
-    lead_captured: "lead_captured"
+    lead_captured: "lead_captured",
     conectado: "conectado",
     payment_pending: "payment_pending",
     subscribed_past_due: "subscribed_past_due",
