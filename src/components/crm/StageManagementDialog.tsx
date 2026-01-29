@@ -1,7 +1,7 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Shield, Lock } from 'lucide-react';
-import { CORE_STAGES, STAGE_CONFIG, LeadStage } from '@/types/database';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Shield, Lock } from "lucide-react";
+import { CORE_STAGES, STAGE_CONFIG, LeadStage } from "@/types/database";
 
 interface StageManagementDialogProps {
   open: boolean;
@@ -28,7 +28,7 @@ export function StageManagementDialog({ open, onOpenChange }: StageManagementDia
             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
               Etapas do Sistema (Obrigatórias)
             </h3>
-            
+
             <div className="space-y-2">
               {CORE_STAGES.map((stage) => {
                 const config = STAGE_CONFIG[stage];
@@ -59,8 +59,8 @@ export function StageManagementDialog({ open, onOpenChange }: StageManagementDia
           {/* Info message */}
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mt-4">
             <p className="text-sm text-muted-foreground">
-              <strong className="text-foreground">Nota:</strong> As etapas core são imutáveis e definem o fluxo principal do funil de vendas e onboarding. 
-              Etapas customizadas não estão disponíveis nesta versão.
+              <strong className="text-foreground">Nota:</strong> As etapas core são imutáveis e definem o fluxo
+              principal do funil de vendas e onboarding. Etapas customizadas não estão disponíveis nesta versão.
             </p>
           </div>
         </div>
@@ -71,17 +71,18 @@ export function StageManagementDialog({ open, onOpenChange }: StageManagementDia
 
 function getStageColorClass(stage: LeadStage): string {
   const colorMap: Record<LeadStage, string> = {
-    captured_form: 'bg-blue-500',
-    checkout_started: 'bg-purple-500',
-    conectado: 'bg-cyan-500',
-    payment_pending: 'bg-amber-500',
-    subscribed_active: 'bg-emerald-500',
-    subscribed_onboarding: 'bg-teal-500',
-    subscribed_past_due: 'bg-orange-500',
-    subscribed_canceled: 'bg-red-500',
-    nurture: 'bg-violet-500',
-    lost: 'bg-gray-500',
-    blocked: 'bg-gray-700'
+    captured_form: "bg-blue-500",
+    checkout_started: "bg-purple-500",
+    conectado: "bg-cyan-500",
+    payment_pending: "bg-amber-500",
+    subscribed_active: "bg-emerald-500",
+    subscribed_onboarding: "bg-teal-500",
+    subscribed_past_due: "bg-orange-500",
+    subscribed_canceled: "bg-red-500",
+    nurture: "bg-violet-500",
+    lost: "bg-gray-500",
+    blocked: "bg-gray-700",
+    lead_captured: "bg-blue-300",
   };
-  return colorMap[stage] || 'bg-gray-500';
+  return colorMap[stage] || "bg-gray-500";
 }
