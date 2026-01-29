@@ -12,7 +12,7 @@ export type LeadStage =
   | "subscribed_canceled"
   | "nurture"
   | "lost"
-  | "blocked"
+  | "blocked",
   | "lead_captured";
 
 // All backend stages (for type compatibility)
@@ -224,4 +224,4 @@ export const STAGE_CONFIG: Record<LeadStage, { label: string; color: string; des
     isCore: true, 
   },
 };
-};
+
