@@ -12,7 +12,7 @@ export type LeadStage =
   | "subscribed_canceled"
   | "nurture"
   | "lost"
-  | "blocked",
+  | "blocked"
   | "lead_captured";
 
 // All backend stages (for type compatibility)
@@ -28,7 +28,7 @@ export const ALL_STAGES: LeadStage[] = [
   "nurture",
   "lost",
   "blocked",
-  "lead_captured"
+  "lead_captured",
 ];
 
 // Visible stages for Kanban display (frontend only - excludes captured_form)
@@ -218,10 +218,9 @@ export const STAGE_CONFIG: Record<LeadStage, { label: string; color: string; des
     isCore: true,
   },
   lead_captured: {
-    label: 'Lead Capturado (WhatsApp)',
-    color: 'stage-lead_captured',
-    description: 'Lead chegou direto pelo WhatsApp, aguardando dados',
-    isCore: true, 
+    label: "Lead Capturado (WhatsApp)",
+    color: "stage-lead_captured",
+    description: "Lead chegou direto pelo WhatsApp, aguardando dados",
+    isCore: true,
   },
 };
-
