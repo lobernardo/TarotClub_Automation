@@ -112,6 +112,7 @@ export const DERIVED_STAGE_CONFIG: Record<DerivedCRMStage, DerivedStageConfig> =
 // Ordem das etapas derivadas no Kanban
 export const DERIVED_CRM_STAGES: DerivedCRMStage[] = [
   "checkout_started",
+  "lead_captured",
   "conectado",
   "payment_pending",
   "onboarding",
@@ -137,6 +138,7 @@ export function deriveCRMStage(lead: Lead, leadEvents: Event[]): DerivedCRMStage
   // Estágios que mapeiam diretamente
   const directMappings: Partial<Record<LeadStage, DerivedCRMStage>> = {
     checkout_started: "checkout_started",
+    lead_captured: "lead_captured"
     conectado: "conectado",
     payment_pending: "payment_pending",
     subscribed_past_due: "subscribed_past_due",
@@ -229,6 +231,7 @@ export function groupLeadsByDerivedStage(
 ): Record<DerivedCRMStage, LeadWithDerivedStage[]> {
   const grouped: Record<DerivedCRMStage, LeadWithDerivedStage[]> = {
     checkout_started: [],
+    lead_captured: [],
     conectado: [],
     payment_pending: [],
     onboarding: [],
