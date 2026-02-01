@@ -78,20 +78,43 @@ export function DerivedKanbanColumn({ derivedStage, leads, onLeadClick, onLeadDr
     setDraggingLeadId(null);
   };
 
+  // Get stage accent color for header
+  const getStageAccent = (stage: DerivedCRMStage): string => {
+    const accents: Record<DerivedCRMStage, string> = {
+      checkout_started: "bg-purple",
+      lead_captured: "bg-info",
+      conectado: "bg-info",
+      payment_pending: "bg-warning",
+      onboarding: "bg-accent",
+      onboarding_sent: "bg-accent",
+      cliente_ativo: "bg-success",
+      subscribed_past_due: "bg-warning",
+      subscribed_canceled: "bg-destructive",
+      nurture: "bg-purple",
+      lost: "bg-muted-foreground",
+      blocked: "bg-muted-foreground",
+    };
+    return accents[stage] || "bg-accent";
+  };
+
   return (
     <div
       className={cn(
-        "kanban-column min-w-[280px] max-w-[320px] transition-all duration-200",
-        isDragOver && "ring-2 ring-primary/50 bg-primary/5",
+        "kanban-column min-w-[300px] max-w-[340px] transition-all duration-200 relative",
+        isDragOver && "ring-2 ring-accent/40 bg-accent/5",
       )}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="flex items-center justify-between mb-4 px-1">
-        <div className="flex items-center gap-2">
-          <span className={cn("stage-badge", config.color)}>{config.label}</span>
-          <span className="text-xs text-muted-foreground">{leads.length}</span>
+      {/* Column header with accent bar */}
+      <div className="mb-4 px-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={cn("w-1 h-5 rounded-full", getStageAccent(derivedStage))} />
+            <span className="font-semibold text-foreground text-sm">{config.label}</span>
+          </div>
+          <span className="count-badge">{leads.length}</span>
         </div>
       </div>
 
@@ -99,15 +122,24 @@ export function DerivedKanbanColumn({ derivedStage, leads, onLeadClick, onLeadDr
         {leads.length === 0 ? (
           <div
             className={cn(
-              "text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-lg transition-colors",
-              isDragOver ? "border-primary/50 bg-primary/5" : "border-transparent",
+              "text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl transition-all duration-200",
+              isDragOver ? "border-accent/50 bg-accent/5" : "border-border",
             )}
           >
-            {isDragOver ? "Soltar aqui" : "Nenhum lead neste estágio"}
+            {isDragOver ? (
+              <span className="font-medium text-accent">Soltar aqui</span>
+            ) : (
+              <span>Nenhum lead</span>
+            )}
           </div>
         ) : (
-          leads.map((lead) => (
-            <div key={lead.id} onDragStart={() => handleDragStart(lead.id)} onDragEnd={handleDragEnd}>
+          leads.map((lead, index) => (
+            <div 
+              key={lead.id} 
+              onDragStart={() => handleDragStart(lead.id)} 
+              onDragEnd={handleDragEnd}
+              style={{ animationDelay: `${index * 30}ms` }}
+            >
               <LeadCard lead={lead} onClick={() => onLeadClick?.(lead)} isDragging={draggingLeadId === lead.id} />
             </div>
           ))

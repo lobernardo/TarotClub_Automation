@@ -6,8 +6,7 @@ import { useLeadActions } from "@/hooks/useLeadActions";
 import { Lead, LeadStage, STAGE_CONFIG } from "@/types/database";
 import { LeadDetailSheet } from "@/components/crm/LeadDetailSheet";
 import { StageBadge } from "@/components/ui/StageBadge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, UserCheck, Mail, MessageSquare, Calendar, List, LayoutGrid, Loader2 } from "lucide-react";
+import { Search, UserCheck, Mail, MessageSquare, Calendar, List, LayoutGrid, Loader2, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { format, formatDistanceToNow } from "date-fns";
@@ -62,97 +61,122 @@ export default function Clients() {
     }
   };
 
-  const ClientCard = ({ client, onClick }: { client: Lead; onClick: () => void }) => (
-    <div
-      onClick={onClick}
-      className="glass-card rounded-xl p-5 hover:border-primary/50 transition-all cursor-pointer animate-fade-in"
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-foreground">{client.name}</h3>
-          <StageBadge stage={client.stage} className="mt-1" />
-        </div>
-        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-          <span className="text-primary font-semibold">
-            {client.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .slice(0, 2)}
-          </span>
-        </div>
-      </div>
+  const ClientCard = ({ client, onClick }: { client: Lead; onClick: () => void }) => {
+    const initials = client.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
 
-      <div className="space-y-2 text-sm">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Mail className="h-4 w-4" />
-          <span className="truncate">{client.email}</span>
+    return (
+      <div
+        onClick={onClick}
+        className="glass-card p-5 cursor-pointer animate-scale-in"
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-foreground truncate">{client.name}</h3>
+            <StageBadge stage={client.stage} className="mt-2" />
+          </div>
+          <div className="avatar-premium h-11 w-11 text-sm flex-shrink-0">
+            {initials}
+          </div>
         </div>
-        {client.whatsapp && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <MessageSquare className="h-4 w-4" />
-            <span>{client.whatsapp}</span>
+
+        <div className="space-y-2.5 text-sm">
+          <div className="flex items-center gap-2.5 text-muted-foreground">
+            <Mail className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{client.email}</span>
+          </div>
+          {client.whatsapp && (
+            <div className="flex items-center gap-2.5 text-muted-foreground">
+              <MessageSquare className="h-4 w-4 flex-shrink-0" />
+              <span>{client.whatsapp}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2.5 text-muted-foreground">
+            <Calendar className="h-4 w-4 flex-shrink-0" />
+            <span>Membro desde {format(new Date(client.created_at), "MMM 'de' yyyy", { locale: ptBR })}</span>
+          </div>
+        </div>
+
+        {client.last_interaction_at && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground">
+              Última interação:{" "}
+              {formatDistanceToNow(new Date(client.last_interaction_at), {
+                addSuffix: true,
+                locale: ptBR,
+              })}
+            </p>
           </div>
         )}
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Calendar className="h-4 w-4" />
-          <span>Membro desde {format(new Date(client.created_at), "MMM 'de' yyyy", { locale: ptBR })}</span>
-        </div>
-      </div>
 
-      {client.last_interaction_at && (
-        <div className="mt-4 pt-4 border-t border-border">
-          <p className="text-xs text-muted-foreground">
-            Última interação:{" "}
-            {formatDistanceToNow(new Date(client.last_interaction_at), {
-              addSuffix: true,
-              locale: ptBR,
-            })}
-          </p>
-        </div>
-      )}
-
-      {client.notes && (
-        <div className="mt-3 p-2 rounded bg-primary/5 border border-primary/10">
-          <p className="text-xs text-primary">{client.notes}</p>
-        </div>
-      )}
-    </div>
-  );
-
-  const KanbanColumn = ({ stage, clients }: { stage: LeadStage; clients: Lead[] }) => (
-    <div className="kanban-column min-w-[280px] max-w-[320px]">
-      <div className="flex items-center justify-between mb-4 px-1">
-        <div className="flex items-center gap-2">
-          <span className={cn("stage-badge", STAGE_CONFIG[stage].color)}>{STAGE_CONFIG[stage].label}</span>
-          <span className="text-xs text-muted-foreground">{clients.length}</span>
-        </div>
-      </div>
-
-      <div className="space-y-3 flex-1 overflow-y-auto">
-        {clients.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">Nenhum cliente neste status</div>
-        ) : (
-          clients.map((client) => (
-            <ClientCard key={client.id} client={client} onClick={() => setSelectedClient(client)} />
-          ))
+        {client.notes && (
+          <div className="mt-3 p-3 rounded-lg bg-accent/5 border border-accent/20">
+            <p className="text-xs text-accent-foreground">{client.notes}</p>
+          </div>
         )}
       </div>
-    </div>
-  );
+    );
+  };
+
+  const KanbanColumn = ({ stage, clients }: { stage: LeadStage; clients: Lead[] }) => {
+    const getStageAccent = (stage: LeadStage): string => {
+      const accents: Record<string, string> = {
+        subscribed_active: "bg-success",
+        subscribed_past_due: "bg-warning",
+        subscribed_canceled: "bg-destructive",
+      };
+      return accents[stage] || "bg-accent";
+    };
+
+    return (
+      <div className="kanban-column min-w-[300px] max-w-[340px]">
+        <div className="flex items-center justify-between mb-4 px-1">
+          <div className="flex items-center gap-2">
+            <div className={cn("w-1 h-5 rounded-full", getStageAccent(stage))} />
+            <span className="font-semibold text-foreground text-sm">{STAGE_CONFIG[stage].label}</span>
+          </div>
+          <span className="count-badge">{clients.length}</span>
+        </div>
+
+        <div className="space-y-3 flex-1 overflow-y-auto">
+          {clients.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed border-border rounded-xl">
+              Nenhum cliente
+            </div>
+          ) : (
+            clients.map((client, index) => (
+              <div key={client.id} style={{ animationDelay: `${index * 30}ms` }}>
+                <ClientCard client={client} onClick={() => setSelectedClient(client)} />
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <UserCheck className="h-8 w-8 text-primary" />
-              Clientes
+            <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-gold-soft to-purple-soft/50 flex items-center justify-center">
+                <UserCheck className="h-5 w-5 text-accent" />
+              </div>
+              <span className="heading-display">Clientes</span>
             </h1>
-            <p className="text-muted-foreground mt-1">
-              {activeCount} ativos • {pastDueCount} atrasados • {canceledCount} cancelados
+            <p className="text-muted-foreground mt-1.5">
+              <span className="text-success font-medium">{activeCount} ativos</span>
+              <span className="mx-2">•</span>
+              <span className="text-warning font-medium">{pastDueCount} atrasados</span>
+              <span className="mx-2">•</span>
+              <span className="text-destructive font-medium">{canceledCount} cancelados</span>
             </p>
           </div>
 
@@ -163,16 +187,16 @@ export default function Clients() {
                 placeholder="Buscar clientes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-64 bg-muted/50 border-border"
+                className="pl-9 w-64 bg-card border-border"
               />
             </div>
 
-            <div className="flex border border-border rounded-md">
+            <div className="flex border border-border rounded-lg bg-card overflow-hidden">
               <Button
                 variant={viewMode === "list" ? "secondary" : "ghost"}
                 size="icon"
                 onClick={() => setViewMode("list")}
-                className="rounded-r-none"
+                className="rounded-none border-0"
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -180,7 +204,7 @@ export default function Clients() {
                 variant={viewMode === "kanban" ? "secondary" : "ghost"}
                 size="icon"
                 onClick={() => setViewMode("kanban")}
-                className="rounded-l-none"
+                className="rounded-none border-0"
               >
                 <LayoutGrid className="h-4 w-4" />
               </Button>
@@ -189,49 +213,58 @@ export default function Clients() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-accent" />
           </div>
         ) : (
           <>
             {viewMode === "list" ? (
               /* List View */
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredClients.map((client) => (
-                  <ClientCard key={client.id} client={client} onClick={() => setSelectedClient(client)} />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filteredClients.map((client, index) => (
+                  <div key={client.id} style={{ animationDelay: `${index * 30}ms` }}>
+                    <ClientCard client={client} onClick={() => setSelectedClient(client)} />
+                  </div>
                 ))}
               </div>
             ) : (
               /* Kanban View */
-              <div className="overflow-x-auto pb-4">
-                <div className="flex gap-4 min-w-max">
-                  {CLIENT_STAGES.map((stage) => (
-                    <KanbanColumn
+              <div className="overflow-x-auto pb-4 -mx-2 px-2">
+                <div className="flex gap-5 min-w-max">
+                  {CLIENT_STAGES.map((stage, index) => (
+                    <div 
                       key={stage}
-                      stage={stage}
-                      clients={
-                        filteredByStatus[
-                          stage === "subscribed_active"
-                            ? "active"
-                            : stage === "subscribed_past_due"
-                              ? "past_due"
-                              : "canceled"
-                        ]
-                      }
-                    />
+                      className="animate-slide-up"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <KanbanColumn
+                        stage={stage}
+                        clients={
+                          filteredByStatus[
+                            stage === "subscribed_active"
+                              ? "active"
+                              : stage === "subscribed_past_due"
+                                ? "past_due"
+                                : "canceled"
+                          ]
+                        }
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
             )}
 
             {filteredClients.length === 0 && (
-              <div className="text-center py-12 glass-card rounded-xl">
-                <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">Nenhum cliente encontrado</h3>
-                <p className="text-muted-foreground">
+              <div className="empty-state">
+                <div className="empty-state-icon inline-block">
+                  <Users className="h-10 w-10 text-muted-foreground" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum cliente encontrado</h3>
+                <p className="text-muted-foreground max-w-md mx-auto">
                   {searchQuery
-                    ? "Tente buscar por outro termo"
-                    : "Os clientes aparecerão aqui quando houver assinantes"}
+                    ? "Tente buscar por outro termo ou limpar o filtro."
+                    : "Os clientes aparecerão aqui quando houver assinantes ativos no Clube do Tarot."}
                 </p>
               </div>
             )}
