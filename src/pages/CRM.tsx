@@ -17,7 +17,7 @@ import {
   LeadWithDerivedStage 
 } from "@/hooks/useDerivedStages";
 
-import { Search, Filter, Settings2, UserPlus } from "lucide-react";
+import { Search, Filter, Settings2, UserPlus, Kanban } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -118,52 +118,68 @@ export default function CRM() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">CRM Kanban</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-gold-soft to-purple-soft/50 flex items-center justify-center">
+                <Kanban className="h-5 w-5 text-accent" />
+              </div>
+              <span className="heading-display">CRM Kanban</span>
+            </h1>
+            <p className="text-muted-foreground mt-1.5">
               {filteredTotal} de {totalLeads} leads
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar leads..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-64"
+                className="pl-9 w-64 bg-card border-border"
               />
             </div>
 
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" className="border-border bg-card hover:bg-secondary">
               <Filter className="h-4 w-4" />
             </Button>
 
-            <Button variant="outline" className="gap-2" onClick={() => setStageDialogOpen(true)}>
+            <Button 
+              variant="outline" 
+              className="gap-2 border-border bg-card hover:bg-secondary" 
+              onClick={() => setStageDialogOpen(true)}
+            >
               <Settings2 className="h-4 w-4" />
-              Gerenciar Etapas
+              <span className="hidden sm:inline">Gerenciar Etapas</span>
             </Button>
 
-            <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
+            <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={() => setCreateDialogOpen(true)}>
               <UserPlus className="h-4 w-4" />
-              Novo Lead
+              <span className="hidden sm:inline">Novo Lead</span>
             </Button>
           </div>
         </div>
 
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-max">
-            {DERIVED_CRM_STAGES.map((derivedStage) => (
-              <DerivedKanbanColumn
-                key={derivedStage}
-                derivedStage={derivedStage}
-                leads={filteredLeadsByDerivedStage[derivedStage] || []}
-                onLeadClick={setSelectedLead}
-                onLeadDrop={handleLeadDrop}
-              />
+        {/* Kanban Board */}
+        <div className="overflow-x-auto pb-4 -mx-2 px-2">
+          <div className="flex gap-5 min-w-max">
+            {DERIVED_CRM_STAGES.map((derivedStage, index) => (
+              <div 
+                key={derivedStage} 
+                className="animate-slide-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <DerivedKanbanColumn
+                  derivedStage={derivedStage}
+                  leads={filteredLeadsByDerivedStage[derivedStage] || []}
+                  onLeadClick={setSelectedLead}
+                  onLeadDrop={handleLeadDrop}
+                />
+              </div>
             ))}
           </div>
         </div>

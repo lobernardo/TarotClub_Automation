@@ -56,31 +56,56 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+          hover: "hsl(var(--sidebar-hover))",
+        },
+        // Semantic colors
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
         },
         // Veranah Alma custom colors
         gold: {
-          DEFAULT: "hsl(44, 38%, 71%)", // #D8C690
-          soft: "hsl(45, 35%, 81%)", // #E6DDB8
-          muted: "hsl(45, 28%, 66%)", // #C9BC8A
+          DEFAULT: "hsl(42, 65%, 58%)",
+          soft: "hsl(42, 45%, 85%)",
+          muted: "hsl(42, 35%, 68%)",
+          deep: "hsl(42, 75%, 45%)",
+        },
+        purple: {
+          DEFAULT: "hsl(262, 45%, 55%)",
+          soft: "hsl(262, 35%, 92%)",
+          muted: "hsl(262, 25%, 70%)",
         },
         veranah: {
-          blue: "hsl(204, 18%, 24%)", // #2F3A44
-          "blue-hover": "hsl(204, 15%, 28%)", // #3A4550
-          "blue-soft": "hsl(210, 11%, 93%)", // #E9EDF0
-          white: "hsl(0, 0%, 100%)", // #FFFFFF
-          "white-soft": "hsl(0, 0%, 98%)", // #FAFAFA
-          "white-warm": "hsl(40, 18%, 96%)", // #F6F5F2
+          blue: "hsl(220, 20%, 25%)",
+          "blue-hover": "hsl(220, 18%, 30%)",
+          "blue-soft": "hsl(210, 40%, 94%)",
+          white: "hsl(0, 0%, 100%)",
+          "white-soft": "hsl(40, 20%, 98%)",
+          "white-warm": "hsl(40, 25%, 95%)",
         },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
       },
       boxShadow: {
-        soft: "0 2px 8px rgba(0, 0, 0, 0.04)",
-        card: "0 4px 16px rgba(0, 0, 0, 0.06)",
-        elevated: "0 8px 24px rgba(0, 0, 0, 0.08)",
+        xs: "0 1px 2px rgba(45, 49, 66, 0.04)",
+        soft: "0 2px 4px rgba(45, 49, 66, 0.05)",
+        card: "0 4px 12px rgba(45, 49, 66, 0.08)",
+        elevated: "0 8px 24px rgba(45, 49, 66, 0.10)",
+        premium: "0 16px 40px rgba(45, 49, 66, 0.12)",
+        glow: "0 0 20px rgba(212, 168, 75, 0.15)",
       },
       fontFamily: {
         sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
@@ -88,25 +113,32 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
+        "slide-up": "slide-up 0.25s ease-out",
+        "scale-in": "scale-in 0.2s ease-out",
       },
     },
   },
