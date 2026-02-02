@@ -113,9 +113,7 @@ function applyMonthlyReset(state: BoardState): BoardState {
  * 2) created_at
  */
 function getPaidAt(client: Lead): Date {
-  const paidAt = (client as Lead & { asaas_paid_at?: string | null })
-    .asaas_paid_at;
-  return new Date(paidAt || client.created_at);
+  return new Date(client.created_at);
 }
 
 /* ================================
@@ -144,10 +142,9 @@ export default function ActiveClientsCRM() {
 
       const { data, error } = await supabase
         .from("leads")
-        .select(
-          "id, name, email, whatsapp, stage, created_at, updated_at, asaas_paid_at"
-        )
-        .in("stage", ["subscribed_active", "subscribed_past_due", "subscribed_canceled"]);
+        .select("*")
+        .in("stage", ["subscribed_active", "subscribed_past_due", "subscribed_canceled"])
+        .order("created_at", { ascending: true });
 
       if (!error) {
         setClients((data as Lead[]) || []);
