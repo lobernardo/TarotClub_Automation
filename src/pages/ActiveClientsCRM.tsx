@@ -147,7 +147,7 @@ export default function ActiveClientsCRM() {
         .select(
           "id, name, email, whatsapp, stage, created_at, updated_at, asaas_paid_at"
         )
-        .eq("stage", "subscribed_active");
+        .in("stage", ["subscribed_active", "subscribed_past_due", "subscribed_canceled"]);
 
       if (!error) {
         setClients((data as Lead[]) || []);
