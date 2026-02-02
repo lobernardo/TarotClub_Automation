@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useClients } from "@/hooks/useClients";
-import { useLeadData } from "@/hooks/useLeadData";
 import { useLeadActions } from "@/hooks/useLeadActions";
 import { Lead, LeadStage, STAGE_CONFIG } from "@/types/database";
 import { LeadDetailSheet } from "@/components/crm/LeadDetailSheet";
@@ -9,7 +8,7 @@ import { StageBadge } from "@/components/ui/StageBadge";
 import { Search, UserCheck, Mail, MessageSquare, Calendar, List, LayoutGrid, Loader2, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -22,13 +21,6 @@ export default function Clients() {
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
 
   const { clients, clientsByStatus, loading, refetch } = useClients();
-  const {
-    events,
-    messages,
-    queueItems,
-    subscription,
-    loading: clientDataLoading,
-  } = useLeadData(selectedClient?.id || null);
   const { changeStage } = useLeadActions(() => {
     refetch();
     if (selectedClient) {
@@ -40,8 +32,8 @@ export default function Clients() {
   const filteredClients = clients.filter(
     (client) =>
       client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.whatsapp.includes(searchQuery),
+      (client.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (client.whatsapp || "").includes(searchQuery),
   );
 
   const filteredByStatus = {
@@ -87,7 +79,7 @@ export default function Clients() {
         <div className="space-y-2.5 text-sm">
           <div className="flex items-center gap-2.5 text-muted-foreground">
             <Mail className="h-4 w-4 flex-shrink-0" />
-            <span className="truncate">{client.email}</span>
+            <span className="truncate">{client.email || "Email não informado"}</span>
           </div>
           {client.whatsapp && (
             <div className="flex items-center gap-2.5 text-muted-foreground">
@@ -101,23 +93,6 @@ export default function Clients() {
           </div>
         </div>
 
-        {client.last_interaction_at && (
-          <div className="mt-4 pt-4 border-t border-border">
-            <p className="text-xs text-muted-foreground">
-              Última interação:{" "}
-              {formatDistanceToNow(new Date(client.last_interaction_at), {
-                addSuffix: true,
-                locale: ptBR,
-              })}
-            </p>
-          </div>
-        )}
-
-        {client.notes && (
-          <div className="mt-3 p-3 rounded-lg bg-accent/5 border border-accent/20">
-            <p className="text-xs text-accent-foreground">{client.notes}</p>
-          </div>
-        )}
       </div>
     );
   };
@@ -275,11 +250,6 @@ export default function Clients() {
           lead={selectedClient}
           open={!!selectedClient}
           onOpenChange={(open) => !open && setSelectedClient(null)}
-          events={events}
-          messages={messages}
-          queueItems={queueItems}
-          subscription={subscription}
-          loading={clientDataLoading}
           onStageChange={handleStageChange}
         />
       </div>

@@ -16,14 +16,9 @@ export function useLeadCounts() {
       
       const stages: LeadStage[] = [
         'captured_form',
-        'checkout_started', 
+        'checkout_started',
         'payment_pending',
         'subscribed_active',
-        'subscribed_past_due',
-        'subscribed_canceled',
-        'lost',
-        'blocked',
-        'nurture'
       ];
 
       const countsMap: Record<string, number> = {};

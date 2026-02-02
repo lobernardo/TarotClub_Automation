@@ -1,5 +1,5 @@
 import { Lead } from "@/types/database";
-import { Clock, MessageCircle, MessageSquare } from "lucide-react";
+import { Clock, MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -46,7 +46,7 @@ export function LeadCard({ lead, onClick, isDragging }: LeadCardProps) {
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-foreground truncate">{lead.name}</h4>
-            <p className="text-sm text-muted-foreground truncate">{lead.email}</p>
+            <p className="text-sm text-muted-foreground truncate">{lead.email || "Email não informado"}</p>
           </div>
         </div>
 
@@ -64,23 +64,6 @@ export function LeadCard({ lead, onClick, isDragging }: LeadCardProps) {
           )}
         </div>
 
-        {/* Last interaction */}
-        {lead.last_interaction_at && (
-          <div className="flex items-center gap-1.5 text-xs pt-2 border-t border-border/50">
-            <MessageCircle className="h-3.5 w-3.5 text-accent" />
-            <span className="text-muted-foreground">
-              Última interação: {formatDistanceToNow(new Date(lead.last_interaction_at), { locale: ptBR })}
-            </span>
-          </div>
-        )}
-
-        {/* Silenced indicator */}
-        {lead.silenced_until && new Date(lead.silenced_until) > new Date() && (
-          <div className="text-xs text-warning bg-warning/10 rounded-md px-2.5 py-1.5 inline-flex items-center gap-1.5 font-medium">
-            <span>🔇</span>
-            Silenciado
-          </div>
-        )}
       </div>
     </div>
   );

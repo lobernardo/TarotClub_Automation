@@ -4,14 +4,10 @@
  *
  * IMPORTANT:
  * - deleteLead cancels queue items but does NOT trigger automations
- * - updateLead only updates basic fields (name, email, whatsapp, notes)
+ * - updateLead only updates basic fields (name, email, whatsapp)
  *
  * RULE (canonical):
- * - Follow-ups are scheduled ONLY in stage `checkout_started`.
- * - When exiting `checkout_started`, cancel ONLY messages that were scheduled BEFORE the stage change,
- *   so onboarding messages scheduled AFTER becoming `subscribed_active` are protected.
  */
-
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LeadStage } from "@/types/database";
@@ -21,9 +17,8 @@ import { normalizeWhatsapp } from "@/lib/utils";
 // Type for updateable lead fields
 export interface UpdateLeadData {
   name?: string;
-  email?: string;
-  whatsapp?: string;
-  notes?: string | null;
+  email?: string | null;
+  whatsapp?: string | null;
 }
 
 export function useLeadActions(onUpdate?: () => void) {
@@ -70,46 +65,6 @@ export function useLeadActions(onUpdate?: () => void) {
           return false;
         }
 
-        // Try to log event (table may not exist)
-        try {
-          await supabase.from("events").insert({
-            lead_id: leadId,
-            type: "stage_changed" as any,
-            payload: {
-              from: oldStage,
-              to: newStage,
-              manual: true,
-            },
-          });
-        } catch (eventErr) {
-          console.log("Could not log stage change event:", eventErr);
-        }
-
-        /**
-         * Cancel checkout follow-ups ONLY when exiting checkout_started.
-         * We cancel scheduled messages created up to the stage change timestamp.
-         * This protects onboarding messages that are scheduled after becoming subscribed_active.
-         *
-         * NOTE: This is the correct canonical implementation. We intentionally do NOT cancel by mq.stage.
-         */
-        if (oldStage === "checkout_started" && newStage !== "checkout_started") {
-          try {
-            await supabase
-              .from("message_queue")
-              .update({
-                status: "canceled",
-                cancel_reason: `exited_checkout_started_to_${newStage}`,
-                canceled_at: stageChangedAt,
-                updated_at: stageChangedAt,
-              })
-              .eq("lead_id", leadId)
-              .eq("status", "scheduled")
-              .lte("created_at", stageChangedAt);
-          } catch (queueErr) {
-            console.log("Could not cancel checkout follow-ups:", queueErr);
-          }
-        }
-
         toast.success("Estágio atualizado com sucesso");
         onUpdate?.();
         return true;
@@ -135,10 +90,12 @@ export function useLeadActions(onUpdate?: () => void) {
 
         // Only include provided fields
         if (data.name !== undefined) updateData.name = data.name.trim();
-        if (data.email !== undefined) updateData.email = data.email.trim().toLowerCase();
-        if (data.whatsapp !== undefined) updateData.whatsapp = normalizeWhatsapp(data.whatsapp);
-        if (data.notes !== undefined) updateData.notes = data.notes;
-
+        if (data.email !== undefined) {
+          updateData.email = data.email ? data.email.trim().toLowerCase() : null;
+        }
+        if (data.whatsapp !== undefined) {
+          updateData.whatsapp = data.whatsapp ? normalizeWhatsapp(data.whatsapp) : null;
+        }
         const { error: updateError } = await supabase.from("leads").update(updateData).eq("id", leadId);
 
         if (updateError) {
@@ -161,33 +118,12 @@ export function useLeadActions(onUpdate?: () => void) {
 
   /**
    * Delete lead (hard delete)
-   * Cancels all pending queue items but does NOT trigger automations
    * IMPORTANT: This is a destructive operation
    */
   const deleteLead = useCallback(
     async (leadId: string): Promise<boolean> => {
       try {
-        const nowIso = new Date().toISOString();
-
-        // 1. Cancel all pending queue items (without triggering automations)
-        // This is a silent cleanup, not an automation trigger
-        try {
-          await supabase
-            .from("message_queue")
-            .update({
-              status: "canceled",
-              cancel_reason: "lead_deleted",
-              canceled_at: nowIso,
-              updated_at: nowIso,
-            })
-            .eq("lead_id", leadId)
-            .eq("status", "scheduled");
-        } catch (queueErr) {
-          console.log("Could not cancel queue items:", queueErr);
-          // Continue with deletion even if queue cancel fails
-        }
-
-        // 2. Delete the lead
+        // Delete the lead
         const { error: deleteError } = await supabase.from("leads").delete().eq("id", leadId);
 
         if (deleteError) {
