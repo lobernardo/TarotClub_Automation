@@ -23,7 +23,7 @@ interface AppointmentRow {
   ends_at: string;
   status: "requested" | "confirmed" | "canceled";
   notes: string | null;
-  meet_link: string | null;
+  google_calendar_event_id?: string | null;
   lead: LeadRel;
 }
 
@@ -33,7 +33,7 @@ interface Appointment {
   ends_at: string;
   status: "requested" | "confirmed" | "canceled";
   notes: string | null;
-  meet_link: string | null;
+  google_calendar_event_id?: string | null;
   lead: Lead | null;
 }
 
@@ -256,7 +256,7 @@ export default function Appointments() {
         ends_at,
         status,
         notes,
-        meet_link,
+        google_calendar_event_id,
         lead:lead_id (
           id,
           name,
@@ -289,7 +289,7 @@ export default function Appointments() {
       ends_at: r.ends_at,
       status: r.status,
       notes: r.notes,
-      meet_link: r.meet_link,
+      google_calendar_event_id: r.google_calendar_event_id,
       lead: normalizeLead(r.lead),
     }));
   }, [rows]);
@@ -361,15 +361,15 @@ export default function Appointments() {
 
                       {ap.notes && <div className="mt-2 text-sm bg-muted/30 rounded px-3 py-2">{ap.notes}</div>}
 
-                      {ap.meet_link && (
+                      {ap.google_calendar_event_id && (
                         <a
-                          href={ap.meet_link}
+                          href={`https://calendar.google.com/calendar/event?eid=${ap.google_calendar_event_id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 mt-3 text-sm text-blue-600 underline"
+                          className="inline-flex items-center gap-2 mt-3 text-sm text-primary underline"
                         >
                           <Video className="h-4 w-4" />
-                          Entrar no Google Meet
+                          Ver no Google Calendar
                         </a>
                       )}
                     </div>

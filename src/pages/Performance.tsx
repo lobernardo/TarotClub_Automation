@@ -53,7 +53,7 @@ export default function Performance() {
           const { count } = await supabase
             .from('leads')
             .select('*', { count: 'exact', head: true })
-            .eq('stage', stage);
+            .eq('stage', stage as any);
           return { name, value: count || 0, fill };
         })
       );

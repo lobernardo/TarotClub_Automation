@@ -43,8 +43,9 @@ export function useAppointments() {
 
         const leadsMap = new Map((leadsData || []).map((l) => [l.id, l]));
 
-        const appointmentsWithLeads: AppointmentWithLead[] = data.map((apt) => ({
+        const appointmentsWithLeads: AppointmentWithLead[] = data.map((apt: any) => ({
           ...apt,
+          status: apt.status as AppointmentStatus,
           lead: leadsMap.get(apt.lead_id) || null,
         }));
 
