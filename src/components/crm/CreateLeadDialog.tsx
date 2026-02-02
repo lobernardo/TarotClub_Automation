@@ -2,9 +2,7 @@
  * Create Lead Dialog
  * Allows manual lead creation with:
  * - Name, email, whatsapp (required: name + at least one contact)
- * - Origin selection
  * - Initial stage selection
- * - Notes
  * - Duplicate check before creation
  */
 
@@ -13,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LeadStage, STAGE_CONFIG, CORE_STAGES } from "@/types/database";
@@ -28,24 +25,11 @@ interface CreateLeadDialogProps {
   onSuccess?: () => void;
 }
 
-const SOURCES = [
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "instagram", label: "Instagram" },
-  { value: "facebook", label: "Facebook" },
-  { value: "google", label: "Google Ads" },
-  { value: "referral", label: "Indicação" },
-  { value: "landing_page", label: "Landing Page" },
-  { value: "manual", label: "Cadastro Manual" },
-  { value: "other", label: "Outro" },
-];
-
 export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDialogProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [source, setSource] = useState("manual");
   const [stage, setStage] = useState<LeadStage>("captured_form");
-  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
@@ -53,9 +37,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
     setName("");
     setEmail("");
     setWhatsapp("");
-    setSource("manual");
     setStage("captured_form");
-    setNotes("");
     setDuplicateWarning(null);
   };
 
@@ -145,9 +127,7 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
           name: name.trim(),
           email: email.trim().toLowerCase() || null,
           whatsapp: normalizeWhatsapp(whatsapp),
-          source,
           stage,
-          notes: notes.trim() || null,
         })
         .select()
         .single();
@@ -156,18 +136,6 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
         console.error("Error creating lead:", error);
         toast.error(`Erro ao criar lead: ${error.message}`);
         return;
-      }
-
-      // Log event if events table exists
-      try {
-        await supabase.from("events").insert({
-          lead_id: data.id,
-          type: "form_submitted",
-          payload: { source, manual: true },
-        });
-      } catch (eventErr) {
-        // Silently fail - events table may not exist
-        console.log("Could not log event:", eventErr);
       }
 
       toast.success("Lead criado com sucesso!");
@@ -242,58 +210,28 @@ export function CreateLeadDialog({ open, onOpenChange, onSuccess }: CreateLeadDi
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="source">Origem</Label>
-              <Select value={source} onValueChange={setSource} disabled={loading}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar origem" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SOURCES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="stage">Estágio Inicial</Label>
-              <Select value={stage} onValueChange={(v) => setStage(v as LeadStage)} disabled={loading}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar estágio" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CORE_STAGES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "w-2 h-2 rounded-full",
-                            `bg-[hsl(var(--stage-${s.replace("_", "-").replace("subscribed_", "")}))]`,
-                          )}
-                        ></span>
-                        {STAGE_CONFIG[s].label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div className="space-y-2">
-            <Label htmlFor="notes">Observações</Label>
-            <Textarea
-              id="notes"
-              placeholder="Notas sobre o lead (opcional)"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={loading}
-              rows={3}
-            />
+            <Label htmlFor="stage">Estágio Inicial</Label>
+            <Select value={stage} onValueChange={(v) => setStage(v as LeadStage)} disabled={loading}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar estágio" />
+              </SelectTrigger>
+              <SelectContent>
+                {CORE_STAGES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "w-2 h-2 rounded-full",
+                          `bg-[hsl(var(--stage-${s.replace("_", "-").replace("subscribed_", "")}))]`,
+                        )}
+                      ></span>
+                      {STAGE_CONFIG[s].label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

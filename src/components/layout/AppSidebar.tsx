@@ -3,8 +3,6 @@ import {
   LayoutDashboard,
   Users,
   UserCheck,
-  BarChart3,
-  Bot,
   Settings,
   LogOut,
   Sparkles,
@@ -16,8 +14,6 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "CRM Kanban", href: "/crm", icon: Users },
   { name: "Clientes Ativos", href: "/clients", icon: UserCheck },
-  { name: "Performance", href: "/performance", icon: BarChart3 },
-  { name: "Performance do Agente", href: "/agent-performance", icon: Bot },
 ];
 
 export function AppSidebar() {
