@@ -14,39 +14,384 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          google_calendar_event_id: string | null
+          id: string
+          lead_id: string
+          notes: string | null
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          google_calendar_event_id?: string | null
+          id?: string
+          lead_id: string
+          notes?: string | null
+          starts_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          google_calendar_event_id?: string | null
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          metadata: Json | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          metadata?: Json | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          metadata?: Json | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrations: {
+        Row: {
+          created_at: string
+          entity_type: string
+          external_id: string
+          id: string
+          lead_id: string
+          metadata: Json | null
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_type: string
+          external_id: string
+          id?: string
+          lead_id: string
+          metadata?: Json | null
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_type?: string
+          external_id?: string
+          id?: string
+          lead_id?: string
+          metadata?: Json | null
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
+          asaas_customer_id: string | null
+          asaas_subscription_id: string | null
           created_at: string
           email: string
           id: string
+          last_interaction_at: string | null
           name: string
           notes: string | null
+          previous_stage: string | null
+          silenced_until: string | null
           source: string | null
           stage: Database["public"]["Enums"]["lead_stage"]
           updated_at: string
           whatsapp: string
+          whatsapp_norm: string | null
         }
         Insert: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
           created_at?: string
           email: string
           id?: string
+          last_interaction_at?: string | null
           name: string
           notes?: string | null
+          previous_stage?: string | null
+          silenced_until?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           updated_at?: string
           whatsapp: string
+          whatsapp_norm?: string | null
         }
         Update: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
           created_at?: string
           email?: string
           id?: string
+          last_interaction_at?: string | null
           name?: string
           notes?: string | null
+          previous_stage?: string | null
+          silenced_until?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           updated_at?: string
           whatsapp?: string
+          whatsapp_norm?: string | null
+        }
+        Relationships: []
+      }
+      message_queue: {
+        Row: {
+          cancel_reason: string | null
+          canceled_at: string | null
+          created_at: string
+          delay_seconds: number | null
+          id: string
+          lead_id: string
+          scheduled_for: string
+          sent_at: string | null
+          stage: string | null
+          status: string
+          template_key: string
+          updated_at: string
+        }
+        Insert: {
+          cancel_reason?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          delay_seconds?: number | null
+          id?: string
+          lead_id: string
+          scheduled_for: string
+          sent_at?: string | null
+          stage?: string | null
+          status?: string
+          template_key: string
+          updated_at?: string
+        }
+        Update: {
+          cancel_reason?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          delay_seconds?: number | null
+          id?: string
+          lead_id?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          stage?: string | null
+          status?: string
+          template_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_queue_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_templates: {
+        Row: {
+          active: boolean
+          content: string
+          created_at: string
+          delay_seconds: number
+          id: string
+          name: string
+          stage: string | null
+          template_key: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          content: string
+          created_at?: string
+          delay_seconds?: number
+          id?: string
+          name: string
+          stage?: string | null
+          template_key: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          content?: string
+          created_at?: string
+          delay_seconds?: number
+          id?: string
+          name?: string
+          stage?: string | null
+          template_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          delivered_at: string | null
+          direction: string
+          external_id: string | null
+          id: string
+          is_ai_generated: boolean
+          lead_id: string
+          metadata: Json | null
+          read_at: string | null
+          sent_at: string
+          template_id: string | null
+        }
+        Insert: {
+          content: string
+          delivered_at?: string | null
+          direction: string
+          external_id?: string | null
+          id?: string
+          is_ai_generated?: boolean
+          lead_id: string
+          metadata?: Json | null
+          read_at?: string | null
+          sent_at?: string
+          template_id?: string | null
+        }
+        Update: {
+          content?: string
+          delivered_at?: string | null
+          direction?: string
+          external_id?: string | null
+          id?: string
+          is_ai_generated?: boolean
+          lead_id?: string
+          metadata?: Json | null
+          read_at?: string | null
+          sent_at?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          asaas_subscription_id: string | null
+          canceled_at: string | null
+          created_at: string
+          id: string
+          lead_id: string
+          metadata: Json | null
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          asaas_subscription_id?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          id?: string
+          lead_id: string
+          metadata?: Json | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          asaas_subscription_id?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string
+          metadata?: Json | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
         }
         Relationships: []
       }
@@ -70,12 +415,30 @@ export type Database = {
         Args: { p_lead_id: string }
         Returns: undefined
       }
+      find_or_create_lead: {
+        Args: {
+          p_email: string
+          p_name: string
+          p_source?: string
+          p_stage?: string
+          p_whatsapp: string
+        }
+        Returns: string
+      }
+      log_event: {
+        Args: { p_lead_id: string; p_metadata?: Json; p_type: string }
+        Returns: string
+      }
       mark_group_invite_sent: {
         Args: { p_lead_id: string; p_message_text: string }
         Returns: undefined
       }
       move_leads_to_nurture_after_inactivity: {
         Args: never
+        Returns: undefined
+      }
+      update_lead_stage: {
+        Args: { p_lead_id: string; p_new_stage: string; p_reason?: string }
         Returns: undefined
       }
     }
