@@ -71,8 +71,9 @@ export interface Lead {
 export interface Event {
   id: string;
   lead_id: string;
-  type: EventType;
-  payload: Record<string, unknown> | null;
+  type: EventType | string;
+  payload?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
   created_at: string;
 }
 

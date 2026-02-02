@@ -1,1 +1,16 @@
 project_id = "jlaygpjhhjwcyoyrqpie"
+
+[functions.lead_from_form]
+verify_jwt = false
+
+[functions.lead_from_whatsapp]
+verify_jwt = false
+
+[functions.asaas_create_customer]
+verify_jwt = false
+
+[functions.asaas_create_subscription]
+verify_jwt = false
+
+[functions.asaas_webhook]
+verify_jwt = false
