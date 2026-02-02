@@ -31,19 +31,12 @@ export const ALL_STAGES: LeadStage[] = [
   "lead_captured",
 ];
 
-// Visible stages for Kanban display (frontend only - excludes captured_form)
+// Visible stages for Kanban display (fase 1)
 export const CORE_STAGES: LeadStage[] = [
+  "captured_form",
   "checkout_started",
-  "lead_captured",
-  "conectado",
   "payment_pending",
   "subscribed_active",
-  "subscribed_onboarding",
-  "subscribed_past_due",
-  "subscribed_canceled",
-  "nurture",
-  "lost",
-  "blocked",
 ];
 
 export type EventType =
@@ -64,15 +57,15 @@ export type EventType =
 export interface Lead {
   id: string;
   name: string;
-  email: string;
-  whatsapp: string;
+  email: string | null;
+  whatsapp: string | null;
   stage: LeadStage;
   created_at: string;
   updated_at: string;
-  last_interaction_at: string | null;
-  silenced_until: string | null;
-  source: string | null;
-  notes: string | null;
+  last_interaction_at?: string | null;
+  silenced_until?: string | null;
+  source?: string | null;
+  notes?: string | null;
 }
 
 export interface Event {

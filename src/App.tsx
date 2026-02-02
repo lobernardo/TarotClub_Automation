@@ -6,12 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import CRM from "./pages/CRM";
 import Clients from "./pages/Clients";
-import Messages from "./pages/Messages";
-import Templates from "./pages/Templates";
-import Onboarding from "./pages/Onboarding";
-import Performance from "./pages/Performance";
-import AgentPerformance from "./pages/AgentPerformance";
-import Appointments from "./pages/Appointments";
+import ActiveClientsCRM from "./pages/ActiveClientsCRM";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -27,12 +22,7 @@ const App = () => (
           <Route path="/" element={<Dashboard />} />
           <Route path="/crm" element={<CRM />} />
           <Route path="/clients" element={<Clients />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/templates" element={<Templates />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/performance" element={<Performance />} />
-          <Route path="/agent-performance" element={<AgentPerformance />} />
-          <Route path="/appointments" element={<Appointments />} />
+          <Route path="/active-clients-crm" element={<ActiveClientsCRM />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { MetricCard } from "@/components/dashboard/MetricCard";
-import { STAGE_CONFIG, LeadStage, Lead, Event } from "@/types/database";
+import { STAGE_CONFIG, LeadStage, Lead } from "@/types/database";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, UserCheck, TrendingUp, Clock, Activity, MessageSquare, Sparkles } from "lucide-react";
+import { Users, UserCheck, TrendingUp, Activity, Sparkles, CheckCircle2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { StageBadge } from "@/components/ui/StageBadge";
@@ -11,9 +11,7 @@ import { StageBadge } from "@/components/ui/StageBadge";
 export default function Dashboard() {
   const [totalLeads, setTotalLeads] = useState<number>(0);
   const [activeClients, setActiveClients] = useState<number>(0);
-  const [pendingFollowUps, setPendingFollowUps] = useState<number>(0);
   const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
-  const [recentEvents, setRecentEvents] = useState<Event[]>([]);
   const [funnelData, setFunnelData] = useState<
     { stage: LeadStage; count: number; config: (typeof STAGE_CONFIG)[LeadStage] }[]
   >([]);
@@ -46,30 +44,6 @@ export default function Dashboard() {
 
       if (activeCount !== null) {
         setActiveClients(activeCount);
-      }
-
-      // Pending follow-ups (message_queue with status = scheduled)
-      try {
-        const { count: pendingCount } = await supabase
-          .from("message_queue")
-          .select(
-            `
-            id,
-            leads!inner (
-              id,
-              stage
-            )
-            `,
-            { count: "exact", head: true },
-          )
-          .eq("status", "scheduled")
-          .eq("leads.stage", "checkout_started");
-
-        if (pendingCount !== null) {
-          setPendingFollowUps(pendingCount);
-        }
-      } catch (err) {
-        console.log("Could not fetch pending follow-ups:", err);
       }
 
       // Funnel data - count leads by stage
@@ -116,7 +90,7 @@ export default function Dashboard() {
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <MetricCard 
             title="Total de Leads" 
             value={totalLeads} 
@@ -134,12 +108,6 @@ export default function Dashboard() {
             value={`${conversionRate}%`}
             icon={<TrendingUp className="h-6 w-6" />}
             variant="purple"
-          />
-          <MetricCard
-            title="Follow-ups Pendentes"
-            value={pendingFollowUps}
-            icon={<Clock className="h-6 w-6" />}
-            variant="warning"
           />
         </div>
 
@@ -206,46 +174,28 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Recent Activity */}
+          {/* Status da Fase 1 */}
           <div className="glass-card p-6">
             <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-gold-soft to-purple-soft/50 flex items-center justify-center">
-                <MessageSquare className="h-4 w-4 text-accent" />
+                <CheckCircle2 className="h-4 w-4 text-accent" />
               </div>
-              Atividade Recente
+              Status da Fase 1
             </h2>
-            {recentEvents.length === 0 ? (
-              <div className="py-8 text-center">
-                <div className="empty-state-icon inline-block mb-4">
-                  <MessageSquare className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  As atividades aparecerão aqui quando houver interações com leads.
-                </p>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5">•</span>
+                <span>Captura na landing page → CRM (lead em “captured_form”).</span>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {recentEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors duration-150"
-                  >
-                    <div className="w-2 h-2 rounded-full bg-accent mt-2 animate-pulse-soft" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground">
-                        <span className="text-muted-foreground">{event.type.replace(/_/g, " ")}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(event.created_at), {
-                          addSuffix: true,
-                          locale: ptBR,
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5">•</span>
+                <span>Checkout Asaas via URL (lead em “checkout_started”).</span>
               </div>
-            )}
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5">•</span>
+                <span>Pagamento confirmado → “subscribed_active” + boas‑vindas.</span>
+              </div>
+            </div>
           </div>
         </div>
 

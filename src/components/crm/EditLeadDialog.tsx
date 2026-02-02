@@ -5,7 +5,7 @@
  * - name
  * - email
  * - whatsapp
- * - notes
+ *
  *
  * Does NOT trigger any automations
  */
@@ -25,7 +25,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Save, X } from "lucide-react";
 
 interface EditLeadDialogProps {
@@ -39,7 +38,6 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSuccess }: EditLead
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { updateLead } = useLeadActions(onSuccess);
@@ -50,7 +48,6 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSuccess }: EditLead
       setName(lead.name ?? "");
       setEmail(lead.email ?? "");
       setWhatsapp(lead.whatsapp ?? "");
-      setNotes(lead.notes ?? "");
     }
   }, [lead, open]);
 
@@ -66,7 +63,6 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSuccess }: EditLead
       name: name.trim(),
       email: email.trim() ? email.trim().toLowerCase() : null,
       whatsapp: normalizeWhatsapp(whatsapp),
-      notes: notes.trim() || null,
     };
 
     const success = await updateLead(lead.id, updateData);
@@ -121,18 +117,6 @@ export function EditLeadDialog({ lead, open, onOpenChange, onSuccess }: EditLead
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
               placeholder="11999999999"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-notes">Observações</Label>
-            <Textarea
-              id="edit-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Notas internas sobre o lead..."
-              rows={3}
               disabled={loading}
             />
           </div>
