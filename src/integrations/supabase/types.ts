@@ -134,6 +134,7 @@ export type Database = {
       leads: {
         Row: {
           asaas_customer_id: string | null
+          asaas_payment_link: string | null
           asaas_subscription_id: string | null
           created_at: string
           email: string
@@ -141,6 +142,7 @@ export type Database = {
           last_interaction_at: string | null
           name: string
           notes: string | null
+          onboarding_sent_at: string | null
           previous_stage: string | null
           silenced_until: string | null
           source: string | null
@@ -151,6 +153,7 @@ export type Database = {
         }
         Insert: {
           asaas_customer_id?: string | null
+          asaas_payment_link?: string | null
           asaas_subscription_id?: string | null
           created_at?: string
           email: string
@@ -158,6 +161,7 @@ export type Database = {
           last_interaction_at?: string | null
           name: string
           notes?: string | null
+          onboarding_sent_at?: string | null
           previous_stage?: string | null
           silenced_until?: string | null
           source?: string | null
@@ -168,6 +172,7 @@ export type Database = {
         }
         Update: {
           asaas_customer_id?: string | null
+          asaas_payment_link?: string | null
           asaas_subscription_id?: string | null
           created_at?: string
           email?: string
@@ -175,6 +180,7 @@ export type Database = {
           last_interaction_at?: string | null
           name?: string
           notes?: string | null
+          onboarding_sent_at?: string | null
           previous_stage?: string | null
           silenced_until?: string | null
           source?: string | null
