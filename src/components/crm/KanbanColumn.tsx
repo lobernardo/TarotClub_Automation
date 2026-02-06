@@ -22,6 +22,7 @@ const STAGE_ACCENTS: Record<LeadStage, string> = {
   subscribed_active: "bg-success",
   conectado: "bg-info",
   lead_captured: "bg-info",
+  agent_captured: "bg-info",
   subscribed_onboarding: "bg-accent",
   subscribed_past_due: "bg-warning",
   subscribed_canceled: "bg-destructive",

@@ -45,7 +45,7 @@ export const DERIVED_STAGE_CONFIG: Record<DerivedCRMStage, DerivedStageConfig> =
     label: "Lead Capturado",
     color: "stage-lead_captured",
     description: "Lead iniciou pelo Whatsapp",
-    matchesBackendStage: ["lead_captured"],
+    matchesBackendStage: ["lead_captured", "agent_captured"],
   },
   conectado: {
     label: "Conectado",
@@ -139,6 +139,7 @@ export function deriveCRMStage(lead: Lead, leadEvents: Event[]): DerivedCRMStage
   const directMappings: Partial<Record<LeadStage, DerivedCRMStage>> = {
     checkout_started: "checkout_started",
     lead_captured: "lead_captured",
+    agent_captured: "lead_captured", // Agente IA -> mesma coluna "Lead Capturado"
     conectado: "conectado",
     payment_pending: "payment_pending",
     subscribed_past_due: "subscribed_past_due",

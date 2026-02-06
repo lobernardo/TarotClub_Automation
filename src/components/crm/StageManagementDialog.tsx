@@ -83,6 +83,7 @@ function getStageColorClass(stage: LeadStage): string {
     lost: "bg-gray-500",
     blocked: "bg-gray-700",
     lead_captured: "bg-blue-300",
+    agent_captured: "bg-blue-300",
   };
   return colorMap[stage] || "bg-gray-500";
 }

@@ -148,6 +148,7 @@ export default function Dashboard() {
                     lost: "from-muted-foreground to-muted-foreground/70",
                     blocked: "from-muted-foreground to-muted-foreground/70",
                     lead_captured: "from-info to-info/70",
+                    agent_captured: "from-info to-info/70",
                   };
 
                   return (

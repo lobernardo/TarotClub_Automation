@@ -481,6 +481,7 @@ export type Database = {
         | "conectado"
         | "subscribed_onboarding"
         | "lead_captured"
+        | "agent_captured"
       message_direction: "outbound" | "inbound"
       message_status: "queued" | "sent" | "delivered" | "failed"
     }
@@ -642,6 +643,7 @@ export const Constants = {
         "conectado",
         "subscribed_onboarding",
         "lead_captured",
+        "agent_captured",
       ],
       message_direction: ["outbound", "inbound"],
       message_status: ["queued", "sent", "delivered", "failed"],
