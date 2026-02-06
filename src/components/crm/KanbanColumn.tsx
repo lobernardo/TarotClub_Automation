@@ -17,6 +17,7 @@ interface KanbanColumnProps {
 
 const STAGE_ACCENTS: Record<LeadStage, string> = {
   captured_form: "bg-info",
+  agent_captured: "bg-info",
   checkout_started: "bg-purple",
   payment_pending: "bg-warning",
   subscribed_active: "bg-success",
