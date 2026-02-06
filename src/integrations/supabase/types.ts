@@ -443,6 +443,7 @@ export type Database = {
         Args: never
         Returns: undefined
       }
+      normalize_br_phone: { Args: { raw: string }; Returns: string }
       update_lead_stage: {
         Args: { p_lead_id: string; p_new_stage: string; p_reason?: string }
         Returns: undefined
