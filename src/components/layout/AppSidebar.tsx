@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoDourado from "@/assets/logo_dourado_transparent.png";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -20,6 +22,22 @@ const navigation = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: 'Erro ao sair',
+        description: 'Tente novamente.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    navigate('/auth', { replace: true });
+  };
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-card border-r border-border/60">
@@ -98,7 +116,10 @@ export function AppSidebar() {
             <span className="font-medium">Configurações</span>
           </NavLink>
 
-          <button className="sidebar-item group w-full text-muted-foreground hover:text-destructive hover:bg-destructive/5">
+          <button 
+            onClick={handleLogout}
+            className="sidebar-item group w-full text-muted-foreground hover:text-destructive hover:bg-destructive/5"
+          >
             <LogOut className="h-5 w-5 text-muted-foreground group-hover:text-destructive transition-colors duration-200" />
             <span className="font-medium">Sair</span>
           </button>
