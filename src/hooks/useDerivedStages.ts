@@ -111,8 +111,8 @@ export const DERIVED_STAGE_CONFIG: Record<DerivedCRMStage, DerivedStageConfig> =
 
 // Ordem das etapas derivadas no Kanban
 export const DERIVED_CRM_STAGES: DerivedCRMStage[] = [
-  "checkout_started",
   "lead_captured",
+  "checkout_started",
   "conectado",
   "payment_pending",
   "onboarding",
