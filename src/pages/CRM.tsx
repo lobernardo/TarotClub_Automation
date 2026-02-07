@@ -1,26 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { KanbanColumn } from "@/components/crm/KanbanColumn";
+import { DerivedKanbanColumn } from "@/components/crm/DerivedKanbanColumn";
 import { StageManagementDialog } from "@/components/crm/StageManagementDialog";
 import { LeadDetailSheet } from "@/components/crm/LeadDetailSheet";
 import { CreateLeadDialog } from "@/components/crm/CreateLeadDialog";
 
 import { useLeads } from "@/hooks/useLeads";
 import { useLeadActions } from "@/hooks/useLeadActions";
-import { Lead, LeadStage, CORE_STAGES } from "@/types/database";
+import { Lead, LeadStage } from "@/types/database";
+import {
+  useDerivedStages,
+  DerivedCRMStage,
+  DERIVED_CRM_STAGES,
+  groupLeadsByDerivedStage,
+  LeadWithDerivedStage,
+  DERIVED_STAGE_CONFIG,
+} from "@/hooks/useDerivedStages";
+import { Event } from "@/types/database";
 
 import { Search, Filter, Settings2, UserPlus, Kanban } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+
+// Map derived stages to their primary backend stage for updates
+const DERIVED_TO_BACKEND_STAGE: Record<DerivedCRMStage, LeadStage> = {
+  checkout_started: "checkout_started",
+  lead_captured: "lead_captured",
+  conectado: "conectado",
+  payment_pending: "payment_pending",
+  onboarding: "subscribed_active",
+  onboarding_sent: "subscribed_onboarding",
+  cliente_ativo: "subscribed_active",
+  subscribed_past_due: "subscribed_past_due",
+  subscribed_canceled: "subscribed_canceled",
+  nurture: "nurture",
+  lost: "lost",
+  blocked: "blocked",
+};
 
 export default function CRM() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [stageDialogOpen, setStageDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [eventsByLead, setEventsByLead] = useState<Map<string, Event[]>>(new Map());
 
   const { leads, refetch: refetchLeads } = useLeads();
-  
+  const { fetchLeadsWithEvents } = useDerivedStages(leads);
+
+  // Fetch events when leads change
+  useEffect(() => {
+    if (leads.length > 0) {
+      fetchLeadsWithEvents().then(setEventsByLead);
+    }
+  }, [leads, fetchLeadsWithEvents]);
+
   const { changeStage } = useLeadActions(() => {
     refetchLeads();
     if (selectedLead) {
@@ -31,26 +65,29 @@ export default function CRM() {
     }
   });
 
-  const leadsByStage = CORE_STAGES.reduce<Record<LeadStage, Lead[]>>(
-    (acc, stage) => {
-      acc[stage] = leads.filter((lead) => lead.stage === stage);
-      return acc;
-    },
-    {} as Record<LeadStage, Lead[]>,
+  // Group leads by derived stage
+  const leadsByDerivedStage = useMemo(
+    () => groupLeadsByDerivedStage(leads, eventsByLead),
+    [leads, eventsByLead]
   );
 
-  // Filtrar leads por busca
-  const filteredLeadsByStage = Object.fromEntries(
-    Object.entries(leadsByStage).map(([stage, stageLeads]) => [
-      stage,
-      stageLeads.filter(
-        (lead) =>
-          lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (lead.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (lead.whatsapp || "").includes(searchQuery),
-      ),
-    ]),
-  ) as Record<LeadStage, Lead[]>;
+  // Filter leads by search
+  const filteredLeadsByStage = useMemo(() => {
+    if (!searchQuery.trim()) return leadsByDerivedStage;
+
+    const query = searchQuery.toLowerCase();
+    return Object.fromEntries(
+      Object.entries(leadsByDerivedStage).map(([stage, stageLeads]) => [
+        stage,
+        stageLeads.filter(
+          (lead) =>
+            lead.name.toLowerCase().includes(query) ||
+            (lead.email || "").toLowerCase().includes(query) ||
+            (lead.whatsapp || "").includes(searchQuery)
+        ),
+      ])
+    ) as Record<DerivedCRMStage, LeadWithDerivedStage[]>;
+  }, [leadsByDerivedStage, searchQuery]);
 
   const totalLeads = leads.length;
   const filteredTotal = Object.values(filteredLeadsByStage).flat().length;
@@ -62,8 +99,9 @@ export default function CRM() {
     }
   };
 
-  const handleLeadDrop = async (leadId: string, fromStage: LeadStage, toStage: LeadStage) => {
-    await changeStage(leadId, toStage);
+  const handleLeadDrop = async (leadId: string, _fromStage: LeadStage, toDerivedStage: DerivedCRMStage) => {
+    const backendStage = DERIVED_TO_BACKEND_STAGE[toDerivedStage];
+    await changeStage(leadId, backendStage);
   };
 
   const handleLeadCreated = () => {
@@ -119,9 +157,9 @@ export default function CRM() {
               <Filter className="h-4 w-4" />
             </Button>
 
-            <Button 
-              variant="outline" 
-              className="gap-2 border-border bg-card hover:bg-secondary" 
+            <Button
+              variant="outline"
+              className="gap-2 border-border bg-card hover:bg-secondary"
               onClick={() => setStageDialogOpen(true)}
             >
               <Settings2 className="h-4 w-4" />
@@ -138,13 +176,9 @@ export default function CRM() {
         {/* Kanban Board */}
         <div className="overflow-x-auto pb-4 -mx-2 px-2">
           <div className="flex gap-5 min-w-max">
-            {CORE_STAGES.map((stage, index) => (
-              <div 
-                key={stage} 
-                className="animate-slide-up"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <KanbanColumn
+            {DERIVED_CRM_STAGES.map((stage, index) => (
+              <div key={stage} className="animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
+                <DerivedKanbanColumn
                   stage={stage}
                   leads={filteredLeadsByStage[stage] || []}
                   onLeadClick={setSelectedLead}
