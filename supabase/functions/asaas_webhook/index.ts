@@ -51,6 +51,7 @@ const EVENT_STAGE_MAP: Record<string, string> = {
   "PAYMENT_CONFIRMED": "subscribed_active",
   "PAYMENT_RECEIVED": "subscribed_active",
   "PAYMENT_OVERDUE": "subscribed_past_due",
+  "PAYMENT_REFUNDED": "subscribed_canceled",
   "SUBSCRIPTION_DELETED": "subscribed_canceled",
 };
 
@@ -159,32 +160,17 @@ Deno.serve(async (req) => {
 
     // Atualizar stage do lead se necessário
     if (newStage && newStage !== lead.stage) {
-      console.log(`[asaas_webhook] Atualizando stage: ${lead.stage} -> ${newStage}`);
+      console.log(`[asaas_webhook] Atualizando stage via RPC: ${lead.stage} -> ${newStage}`);
       
-      const { error: updateError } = await supabase
-        .from("leads")
-        .update({
-          stage: newStage,
-          previous_stage: lead.stage,
-        })
-        .eq("id", lead.id);
+      const { error: rpcError } = await supabase.rpc("update_lead_stage", {
+        p_lead_id: lead.id,
+        p_new_stage: newStage,
+        p_reason: `asaas_webhook_${event}`,
+      });
 
-      if (updateError) {
-        console.error("[asaas_webhook] Erro ao atualizar lead:", updateError);
+      if (rpcError) {
+        console.error("[asaas_webhook] Erro ao atualizar stage via RPC:", rpcError);
       }
-
-      // Registrar evento de mudança de stage
-      await supabase
-        .from("events")
-        .insert({
-          lead_id: lead.id,
-          type: "stage_changed",
-          metadata: {
-            old_stage: lead.stage,
-            new_stage: newStage,
-            reason: `asaas_webhook_${event}`,
-          },
-        });
     }
 
     // Registrar evento do webhook
