@@ -133,6 +133,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          added_to_group_at: string | null
           asaas_customer_id: string | null
           asaas_payment_link: string | null
           asaas_subscription_id: string | null
@@ -143,15 +144,18 @@ export type Database = {
           name: string
           notes: string | null
           onboarding_sent_at: string | null
+          past_due_since: string | null
           previous_stage: string | null
           silenced_until: string | null
           source: string | null
           stage: Database["public"]["Enums"]["lead_stage"]
           updated_at: string
           whatsapp: string
+          whatsapp_group_removed_at: string | null
           whatsapp_norm: string | null
         }
         Insert: {
+          added_to_group_at?: string | null
           asaas_customer_id?: string | null
           asaas_payment_link?: string | null
           asaas_subscription_id?: string | null
@@ -162,15 +166,18 @@ export type Database = {
           name: string
           notes?: string | null
           onboarding_sent_at?: string | null
+          past_due_since?: string | null
           previous_stage?: string | null
           silenced_until?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           updated_at?: string
           whatsapp: string
+          whatsapp_group_removed_at?: string | null
           whatsapp_norm?: string | null
         }
         Update: {
+          added_to_group_at?: string | null
           asaas_customer_id?: string | null
           asaas_payment_link?: string | null
           asaas_subscription_id?: string | null
@@ -181,12 +188,14 @@ export type Database = {
           name?: string
           notes?: string | null
           onboarding_sent_at?: string | null
+          past_due_since?: string | null
           previous_stage?: string | null
           silenced_until?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           updated_at?: string
           whatsapp?: string
+          whatsapp_group_removed_at?: string | null
           whatsapp_norm?: string | null
         }
         Relationships: []
