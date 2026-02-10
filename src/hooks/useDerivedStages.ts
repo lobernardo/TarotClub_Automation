@@ -1,31 +1,23 @@
 /**
  * Hook para derivar etapas operacionais do CRM
  *
- * As etapas do CRM são DERIVADAS de:
- * - lead.stage (enum do banco)
- * - eventos do lead (events)
- *
- * Isso permite visualização operacional sem alterar o modelo de dados.
+ * As etapas do CRM são DERIVADAS de leads.stage (enum do banco).
+ * O CRM exibe apenas o funil comercial (8 colunas).
  */
 
-import { useMemo, useCallback } from "react";
-import { Lead, LeadStage, Event, EventType } from "@/types/database";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
+import { Lead, LeadStage } from "@/types/database";
 
-// Etapas operacionais derivadas para o CRM
+// Etapas visuais do CRM (funil comercial — 8 colunas)
 export type DerivedCRMStage =
-  | "checkout_started" // checkout_started
-  | "lead_captured"
-  | "conectado" // conectado
-  | "payment_pending" // payment_pending
-  | "onboarding" // subscribed_active SEM evento group_invite_sent
-  | "onboarding_sent" // subscribed_onboarding OU subscribed_active COM group_invite_sent
-  | "cliente_ativo" // subscribed_active COM group_join_confirmed
-  | "subscribed_past_due" // subscribed_past_due
-  | "subscribed_canceled" // subscribed_canceled
-  | "nurture" // nurture
-  | "lost" // lost
-  | "blocked"; // blocked
+  | "captured_form"        // Lead captado
+  | "checkout_started"     // Checkout iniciado
+  | "payment_pending"      // Pagamento pendente
+  | "cliente_ativo"        // Cliente ativo (subscribed_active)
+  | "subscribed_past_due"  // Em atraso
+  | "subscribed_canceled"  // Assinatura cancelada
+  | "nurture"              // Nutrição
+  | "lost_blocked";        // Perdido / Bloqueado
 
 export interface DerivedStageConfig {
   label: string;
@@ -35,23 +27,17 @@ export interface DerivedStageConfig {
 }
 
 export const DERIVED_STAGE_CONFIG: Record<DerivedCRMStage, DerivedStageConfig> = {
+  captured_form: {
+    label: "Lead Captado",
+    color: "stage-captured_form",
+    description: "Lead preencheu o formulário",
+    matchesBackendStage: ["captured_form"],
+  },
   checkout_started: {
     label: "Checkout Iniciado",
     color: "stage-checkout_started",
     description: "Lead iniciou checkout",
     matchesBackendStage: ["checkout_started"],
-  },
-  lead_captured: {
-    label: "Lead Capturado",
-    color: "stage-lead_captured",
-    description: "Lead iniciou pelo Whatsapp",
-    matchesBackendStage: ["lead_captured", "agent_captured"],
-  },
-  conectado: {
-    label: "Conectado",
-    color: "stage-conectado",
-    description: "Em conversa ativa com suporte",
-    matchesBackendStage: ["conectado"],
   },
   payment_pending: {
     label: "Pagamento Pendente",
@@ -59,26 +45,14 @@ export const DERIVED_STAGE_CONFIG: Record<DerivedCRMStage, DerivedStageConfig> =
     description: "Aguardando confirmação de pagamento",
     matchesBackendStage: ["payment_pending"],
   },
-  onboarding: {
-    label: "Onboarding",
-    color: "stage-subscribed_active",
-    description: "Pagou, aguardando envio do link do grupo",
-    matchesBackendStage: ["subscribed_active"],
-  },
-  onboarding_sent: {
-    label: "Onboarding Enviado",
-    color: "stage-subscribed_onboarding",
-    description: "Link do grupo enviado, aguardando confirmação",
-    matchesBackendStage: ["subscribed_onboarding", "subscribed_active"],
-  },
   cliente_ativo: {
     label: "Cliente Ativo",
     color: "stage-subscribed_active",
-    description: "Cliente confirmou entrada no grupo",
+    description: "Assinatura ativa",
     matchesBackendStage: ["subscribed_active"],
   },
   subscribed_past_due: {
-    label: "Assinatura Atrasada",
+    label: "Em Atraso",
     color: "stage-subscribed_past_due",
     description: "Pagamento atrasado",
     matchesBackendStage: ["subscribed_past_due"],
@@ -95,34 +69,24 @@ export const DERIVED_STAGE_CONFIG: Record<DerivedCRMStage, DerivedStageConfig> =
     description: "Em nutrição de conteúdo",
     matchesBackendStage: ["nurture"],
   },
-  lost: {
-    label: "Perdido",
+  lost_blocked: {
+    label: "Perdido / Bloqueado",
     color: "stage-lost",
-    description: "Lead perdido",
-    matchesBackendStage: ["lost"],
-  },
-  blocked: {
-    label: "Bloqueado",
-    color: "stage-blocked",
-    description: "Não contatar",
-    matchesBackendStage: ["blocked"],
+    description: "Lead perdido ou bloqueado",
+    matchesBackendStage: ["lost", "blocked"],
   },
 };
 
-// Ordem das etapas derivadas no Kanban
+// Ordem das colunas no Kanban
 export const DERIVED_CRM_STAGES: DerivedCRMStage[] = [
-  "lead_captured",
+  "captured_form",
   "checkout_started",
-  "conectado",
   "payment_pending",
-  "onboarding",
-  "onboarding_sent",
   "cliente_ativo",
   "subscribed_past_due",
   "subscribed_canceled",
   "nurture",
-  "lost",
-  "blocked",
+  "lost_blocked",
 ];
 
 export interface LeadWithDerivedStage extends Lead {
@@ -130,129 +94,50 @@ export interface LeadWithDerivedStage extends Lead {
 }
 
 /**
- * Deriva a etapa operacional do CRM com base no stage + eventos do lead
+ * Mapeia lead.stage do banco → coluna visual do CRM
  */
-export function deriveCRMStage(lead: Lead, leadEvents: Event[]): DerivedCRMStage {
+export function deriveCRMStage(lead: Lead): DerivedCRMStage {
   const { stage } = lead;
 
-  // Estágios que mapeiam diretamente
-  const directMappings: Partial<Record<LeadStage, DerivedCRMStage>> = {
+  const mapping: Record<LeadStage, DerivedCRMStage> = {
+    captured_form: "captured_form",
     checkout_started: "checkout_started",
-    lead_captured: "lead_captured",
-    agent_captured: "lead_captured", // Agente IA -> mesma coluna "Lead Capturado"
-    conectado: "conectado",
+    lead_captured: "captured_form",       // leads WhatsApp → mesma coluna "Lead Captado"
+    agent_captured: "captured_form",      // leads IA → mesma coluna "Lead Captado"
+    conectado: "checkout_started",        // conectado → checkout (funil comercial)
     payment_pending: "payment_pending",
+    subscribed_active: "cliente_ativo",
+    subscribed_onboarding: "cliente_ativo", // onboarding → cliente ativo no CRM
     subscribed_past_due: "subscribed_past_due",
     subscribed_canceled: "subscribed_canceled",
     nurture: "nurture",
-    lost: "lost",
-    blocked: "blocked",
+    lost: "lost_blocked",
+    blocked: "lost_blocked",
   };
 
-  if (directMappings[stage]) {
-    return directMappings[stage]!;
-  }
-
-  // Verificar eventos para subscribed_active e subscribed_onboarding
-  const hasGroupInviteSent = leadEvents.some((e) => e.type === "group_invite_sent");
-  const hasGroupJoinConfirmed = leadEvents.some((e) => e.type === "group_join_confirmed");
-
-  // subscribed_onboarding sempre = onboarding_sent
-  if (stage === "subscribed_onboarding") {
-    return "onboarding_sent";
-  }
-
-  // subscribed_active depende dos eventos
-  if (stage === "subscribed_active") {
-    if (hasGroupJoinConfirmed) {
-      return "cliente_ativo";
-    }
-    if (hasGroupInviteSent) {
-      return "onboarding_sent";
-    }
-    return "onboarding";
-  }
-
-  // captured_form não aparece no CRM visual, mapeia para checkout se chegar aqui
-  if (stage === "captured_form") {
-    return "checkout_started";
-  }
-
-  // Fallback (não deve acontecer)
-  return "checkout_started";
+  return mapping[stage] || "captured_form";
 }
 
 /**
- * Hook principal para usar etapas derivadas no CRM
- */
-export function useDerivedStages(leads: Lead[]) {
-  // Busca eventos de todos os leads para derivar as etapas
-  const fetchLeadsWithEvents = useCallback(async (): Promise<Map<string, Event[]>> => {
-    if (leads.length === 0) return new Map();
-
-    const leadIds = leads.map((l) => l.id);
-
-    // Buscar apenas eventos relevantes para derivação (group_invite_sent, group_join_confirmed)
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .in("lead_id", leadIds)
-      .in("type", ["group_invite_sent", "group_join_confirmed"] as EventType[]);
-
-    if (error) {
-      console.error("Erro ao buscar eventos para derivação:", error);
-      return new Map();
-    }
-
-    // Agrupar eventos por lead_id
-    const eventsByLead = new Map<string, Event[]>();
-    (data || []).forEach((event) => {
-      const existing = eventsByLead.get(event.lead_id) || [];
-      existing.push(event as Event);
-      eventsByLead.set(event.lead_id, existing);
-    });
-
-    return eventsByLead;
-  }, [leads]);
-
-  return {
-    fetchLeadsWithEvents,
-    deriveCRMStage,
-    DERIVED_CRM_STAGES,
-    DERIVED_STAGE_CONFIG,
-  };
-}
-
-/**
- * Agrupa leads por etapa derivada (para uso no Kanban)
+ * Agrupa leads por coluna derivada (para uso no Kanban)
  */
 export function groupLeadsByDerivedStage(
   leads: Lead[],
-  eventsByLead: Map<string, Event[]>,
 ): Record<DerivedCRMStage, LeadWithDerivedStage[]> {
   const grouped: Record<DerivedCRMStage, LeadWithDerivedStage[]> = {
+    captured_form: [],
     checkout_started: [],
-    lead_captured: [],
-    conectado: [],
     payment_pending: [],
-    onboarding: [],
-    onboarding_sent: [],
     cliente_ativo: [],
     subscribed_past_due: [],
     subscribed_canceled: [],
     nurture: [],
-    lost: [],
-    blocked: [],
+    lost_blocked: [],
   };
 
   leads.forEach((lead) => {
-    const events = eventsByLead.get(lead.id) || [];
-    const derivedStage = deriveCRMStage(lead, events);
-
-    grouped[derivedStage].push({
-      ...lead,
-      derivedStage,
-    });
+    const derivedStage = deriveCRMStage(lead);
+    grouped[derivedStage].push({ ...lead, derivedStage });
   });
 
   return grouped;

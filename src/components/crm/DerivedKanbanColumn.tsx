@@ -17,18 +17,14 @@ interface DerivedKanbanColumnProps {
 }
 
 const DERIVED_STAGE_ACCENTS: Record<DerivedCRMStage, string> = {
+  captured_form: "bg-info",
   checkout_started: "bg-purple",
-  lead_captured: "bg-info",
-  conectado: "bg-info",
   payment_pending: "bg-warning",
-  onboarding: "bg-accent",
-  onboarding_sent: "bg-accent",
   cliente_ativo: "bg-success",
   subscribed_past_due: "bg-warning",
   subscribed_canceled: "bg-destructive",
   nurture: "bg-purple",
-  lost: "bg-muted-foreground",
-  blocked: "bg-muted-foreground",
+  lost_blocked: "bg-muted-foreground",
 };
 
 export function DerivedKanbanColumn({ stage, leads, onLeadClick, onLeadDrop }: DerivedKanbanColumnProps) {
