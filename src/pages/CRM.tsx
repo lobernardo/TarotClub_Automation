@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { DerivedKanbanColumn } from "@/components/crm/DerivedKanbanColumn";
 import { StageManagementDialog } from "@/components/crm/StageManagementDialog";
@@ -9,33 +9,26 @@ import { useLeads } from "@/hooks/useLeads";
 import { useLeadActions } from "@/hooks/useLeadActions";
 import { Lead, LeadStage } from "@/types/database";
 import {
-  useDerivedStages,
   DerivedCRMStage,
   DERIVED_CRM_STAGES,
   groupLeadsByDerivedStage,
   LeadWithDerivedStage,
-  DERIVED_STAGE_CONFIG,
 } from "@/hooks/useDerivedStages";
-import { Event } from "@/types/database";
 
 import { Search, Filter, Settings2, UserPlus, Kanban } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-// Map derived stages to their primary backend stage for updates
+// Map derived stages to their primary backend stage for drag-and-drop
 const DERIVED_TO_BACKEND_STAGE: Record<DerivedCRMStage, LeadStage> = {
+  captured_form: "captured_form",
   checkout_started: "checkout_started",
-  lead_captured: "lead_captured",
-  conectado: "conectado",
   payment_pending: "payment_pending",
-  onboarding: "subscribed_active",
-  onboarding_sent: "subscribed_onboarding",
   cliente_ativo: "subscribed_active",
   subscribed_past_due: "subscribed_past_due",
   subscribed_canceled: "subscribed_canceled",
   nurture: "nurture",
-  lost: "lost",
-  blocked: "blocked",
+  lost_blocked: "lost",
 };
 
 export default function CRM() {
@@ -43,17 +36,8 @@ export default function CRM() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [stageDialogOpen, setStageDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [eventsByLead, setEventsByLead] = useState<Map<string, Event[]>>(new Map());
 
   const { leads, refetch: refetchLeads } = useLeads();
-  const { fetchLeadsWithEvents } = useDerivedStages(leads);
-
-  // Fetch events when leads change
-  useEffect(() => {
-    if (leads.length > 0) {
-      fetchLeadsWithEvents().then(setEventsByLead);
-    }
-  }, [leads, fetchLeadsWithEvents]);
 
   const { changeStage } = useLeadActions(() => {
     refetchLeads();
@@ -65,10 +49,10 @@ export default function CRM() {
     }
   });
 
-  // Group leads by derived stage
+  // Group leads by derived stage (no events needed anymore)
   const leadsByDerivedStage = useMemo(
-    () => groupLeadsByDerivedStage(leads, eventsByLead),
-    [leads, eventsByLead]
+    () => groupLeadsByDerivedStage(leads),
+    [leads]
   );
 
   // Filter leads by search
@@ -190,9 +174,7 @@ export default function CRM() {
         </div>
 
         <StageManagementDialog open={stageDialogOpen} onOpenChange={setStageDialogOpen} />
-
         <CreateLeadDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} onSuccess={handleLeadCreated} />
-
         <LeadDetailSheet
           lead={selectedLead}
           open={!!selectedLead}
