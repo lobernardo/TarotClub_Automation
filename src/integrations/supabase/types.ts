@@ -58,6 +58,60 @@ export type Database = {
           },
         ]
       }
+      blog_posts: {
+        Row: {
+          author_user_id: string | null
+          content: string
+          created_at: string
+          error_message: string | null
+          excerpt: string | null
+          featured_image_url: string | null
+          id: string
+          make_execution_id: string | null
+          published_at: string | null
+          slug: string | null
+          status: string
+          title: string
+          updated_at: string
+          wp_post_id: string | null
+          wp_post_url: string | null
+        }
+        Insert: {
+          author_user_id?: string | null
+          content: string
+          created_at?: string
+          error_message?: string | null
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          make_execution_id?: string | null
+          published_at?: string | null
+          slug?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          wp_post_id?: string | null
+          wp_post_url?: string | null
+        }
+        Update: {
+          author_user_id?: string | null
+          content?: string
+          created_at?: string
+          error_message?: string | null
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          make_execution_id?: string | null
+          published_at?: string | null
+          slug?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          wp_post_id?: string | null
+          wp_post_url?: string | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
