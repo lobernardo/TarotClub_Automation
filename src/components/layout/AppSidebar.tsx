@@ -4,6 +4,7 @@ import {
   Users,
   UserCheck,
   ClipboardList,
+  FileText,
   Settings,
   LogOut,
   Sparkles,
@@ -18,6 +19,7 @@ const navigation = [
   { name: "CRM Kanban", href: "/crm", icon: Users },
   { name: "Clientes Ativos", href: "/clients", icon: UserCheck },
   { name: "CRM Clientes Ativos", href: "/active-clients-crm", icon: ClipboardList },
+  { name: "Blog", href: "/blog", icon: FileText },
 ];
 
 export function AppSidebar() {

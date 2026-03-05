@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.asaas_webhook]
 verify_jwt = false
+
+[functions.blog_publish]
+verify_jwt = false
+
+[functions.blog_publish_result]
+verify_jwt = false
