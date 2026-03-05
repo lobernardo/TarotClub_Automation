@@ -12,6 +12,7 @@ import Clients from "./pages/Clients";
 import ActiveClientsCRM from "./pages/ActiveClientsCRM";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Blog from "./pages/Blog";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
           <Route path="/active-clients-crm" element={<ProtectedRoute><ActiveClientsCRM /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/blog" element={<ProtectedRoute><Blog /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
