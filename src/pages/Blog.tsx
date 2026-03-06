@@ -131,6 +131,7 @@ export default function Blog() {
 
       setSeoKeywords(data?.keywords ?? "");
       setSeoDescription(data?.description ?? "");
+      setExcerpt(data?.excerpt ?? "");
     } finally {
       setGeneratingSEO(false);
     }
