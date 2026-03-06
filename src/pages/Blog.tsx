@@ -60,6 +60,7 @@ export default function Blog() {
   const [featuredImageUrl, setFeaturedImageUrl] = useState("");
   const [seoKeywords, setSeoKeywords] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
+  const [improvingTitle, setImprovingTitle] = useState(false);
   const [generatingSEO, setGeneratingSEO] = useState(false);
   const [generatingArticle, setGeneratingArticle] = useState(false);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
@@ -134,6 +135,33 @@ export default function Blog() {
       setExcerpt(data?.excerpt ?? "");
     } finally {
       setGeneratingSEO(false);
+    }
+  };
+
+  const improveTitleWithAI = async () => {
+    if (!title) {
+      alert("Digite um título primeiro");
+      return;
+    }
+
+    setImprovingTitle(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("blog_ai_title", {
+        body: { title },
+      });
+
+      if (error) {
+        console.error(error);
+        alert("Erro ao melhorar título");
+        return;
+      }
+
+      const improvedTitle = data?.title;
+      if (improvedTitle && typeof improvedTitle === "string") {
+        handleTitleChange(improvedTitle);
+      }
+    } finally {
+      setImprovingTitle(false);
     }
   };
 
@@ -256,7 +284,18 @@ export default function Blog() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Título</label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="text-sm font-medium text-foreground">Título</label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={improveTitleWithAI}
+                    disabled={improvingTitle}
+                  >
+                    {improvingTitle ? "Melhorando..." : "✨ Melhorar com IA"}
+                  </Button>
+                </div>
                 <Input value={title} onChange={(e) => handleTitleChange(e.target.value)} placeholder="Título do post" />
               </div>
               <div className="space-y-2">
