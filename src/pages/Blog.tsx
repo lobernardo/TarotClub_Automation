@@ -61,9 +61,9 @@ export default function Blog() {
   const [seoKeywords, setSeoKeywords] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
   const [generatingSEO, setGeneratingSEO] = useState(false);
+  const [generatingArticle, setGeneratingArticle] = useState(false);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [generatingAI, setGeneratingAI] = useState(false);
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
@@ -118,21 +118,22 @@ export default function Blog() {
     }
 
     setGeneratingSEO(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("blog_ai_seo", {
+        body: { title },
+      });
 
-    const { data, error } = await supabase.functions.invoke("blog_ai_seo", {
-      body: { title },
-    });
+      if (error) {
+        console.error(error);
+        alert("Erro ao gerar SEO");
+        return;
+      }
 
-    if (error) {
-      console.error(error);
-      alert("Erro ao gerar SEO");
+      setSeoKeywords(data?.keywords ?? "");
+      setSeoDescription(data?.description ?? "");
+    } finally {
       setGeneratingSEO(false);
-      return;
     }
-
-    setSeoKeywords(data?.keywords ?? "");
-    setSeoDescription(data?.description ?? "");
-    setGeneratingSEO(false);
   };
 
   const getPostPayload = () => ({
@@ -216,21 +217,22 @@ export default function Blog() {
       return;
     }
 
-    setGeneratingAI(true);
+    setGeneratingArticle(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("blog_ai_article", {
+        body: { title },
+      });
 
-    const { data, error } = await supabase.functions.invoke("blog_ai_article", {
-      body: { title },
-    });
+      if (error) {
+        console.error(error);
+        alert("Erro ao gerar artigo");
+        return;
+      }
 
-    if (error) {
-      console.error(error);
-      alert("Erro ao gerar artigo");
-      setGeneratingAI(false);
-      return;
+      setContent(data.article);
+    } finally {
+      setGeneratingArticle(false);
     }
-
-    setContent(data.article);
-    setGeneratingAI(false);
   };
 
   return (
@@ -272,7 +274,7 @@ export default function Blog() {
                   onClick={generateSeoSuggestions}
                   disabled={generatingSEO}
                 >
-                  {generatingSEO ? "Gerando SEO..." : "✨ Gerar com IA"}
+                  {generatingSEO ? "Gerando SEO..." : "✨ Gerar SEO com IA"}
                 </Button>
               </div>
               <Input
@@ -283,18 +285,7 @@ export default function Blog() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="text-sm font-medium text-foreground">Descrição SEO</label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={generateSeoSuggestions}
-                  disabled={generatingSEO}
-                >
-                  {generatingSEO ? "Gerando SEO..." : "✨ Gerar com IA"}
-                </Button>
-              </div>
+              <label className="text-sm font-medium text-foreground">Descrição SEO</label>
               <Textarea
                 value={seoDescription}
                 onChange={(e) => setSeoDescription(e.target.value)}
@@ -309,9 +300,9 @@ export default function Blog() {
                 type="button"
                 variant="secondary"
                 onClick={generateArticleWithAI}
-                disabled={generatingAI}
+                disabled={generatingArticle}
               >
-                {generatingAI ? "Gerando artigo..." : "✨ Gerar artigo com IA"}
+                {generatingArticle ? "Gerando artigo..." : "✨ Gerar artigo com IA"}
               </Button>
               <Textarea
                 value={content}
