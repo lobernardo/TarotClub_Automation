@@ -172,7 +172,20 @@ export default function Blog() {
                   <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
                 </label>
                 {featuredImageUrl && (
-                  <img src={featuredImageUrl} alt="Preview" className="h-12 w-12 object-cover rounded-lg border border-border" />
+                  <div className="relative">
+                    <img
+                      src={featuredImageUrl}
+                      alt="Preview"
+                      className="h-12 w-12 object-cover rounded-lg border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFeaturedImageUrl(null)}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                    >
+                      ×
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
