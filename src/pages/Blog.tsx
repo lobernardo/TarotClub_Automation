@@ -60,6 +60,7 @@ export default function Blog() {
   const [featuredImageUrl, setFeaturedImageUrl] = useState("");
   const [seoKeywords, setSeoKeywords] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
+  const [generatingSEO, setGeneratingSEO] = useState(false);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
@@ -108,6 +109,30 @@ export default function Blog() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const generateSeoSuggestions = async () => {
+    if (!title) {
+      alert("Digite um título primeiro");
+      return;
+    }
+
+    setGeneratingSEO(true);
+
+    const { data, error } = await supabase.functions.invoke("blog_ai_seo", {
+      body: { title },
+    });
+
+    if (error) {
+      console.error(error);
+      alert("Erro ao gerar SEO");
+      setGeneratingSEO(false);
+      return;
+    }
+
+    setSeoKeywords(data?.keywords ?? "");
+    setSeoDescription(data?.description ?? "");
+    setGeneratingSEO(false);
   };
 
   const getPostPayload = () => ({
@@ -269,12 +294,7 @@ export default function Blog() {
                 value={seoKeywords}
                 onChange={(e) => setSeoKeywords(e.target.value)}
                 placeholder="Campo gerado automaticamente por IA"
-                disabled
-                className="bg-muted text-muted-foreground cursor-not-allowed disabled:opacity-100"
               />
-              <p className="text-xs text-muted-foreground">
-                Este campo é gerado automaticamente por IA durante a publicação do artigo.
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -288,12 +308,19 @@ export default function Blog() {
                 value={seoDescription}
                 onChange={(e) => setSeoDescription(e.target.value)}
                 placeholder="Campo gerado automaticamente por IA"
-                disabled
-                className="min-h-[100px] bg-muted text-muted-foreground cursor-not-allowed disabled:opacity-100"
+                className="min-h-[100px]"
               />
-              <p className="text-xs text-muted-foreground">
-                Este campo é gerado automaticamente por IA durante a publicação do artigo.
-              </p>
+            </div>
+
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={generateSeoSuggestions}
+                disabled={generatingSEO}
+              >
+                {generatingSEO ? "Gerando SEO..." : "✨ Sugerir SEO com IA"}
+              </Button>
             </div>
 
             <div className="space-y-2">
