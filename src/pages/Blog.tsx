@@ -27,6 +27,17 @@ const STATUS_COLORS: Record<string, string> = {
   failed: "bg-red-100 text-red-800",
 };
 
+function generateSlug(title: string) {
+  return title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
 export default function Blog() {
   const { postsQuery, createPost, publishPost } = useBlogPosts();
   const { toast } = useToast();
@@ -37,6 +48,11 @@ export default function Blog() {
   const [content, setContent] = useState("");
   const [featuredImageUrl, setFeaturedImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    setSlug(generateSlug(value));
+  };
 
   const resetForm = () => {
     setTitle("");
@@ -138,7 +154,7 @@ export default function Blog() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Título</label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título do post" />
+                <Input value={title} onChange={(e) => handleTitleChange(e.target.value)} placeholder="Título do post" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Slug</label>
