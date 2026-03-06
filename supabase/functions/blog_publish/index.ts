@@ -77,6 +77,8 @@ Deno.serve(async (req) => {
         content: post.content,
         excerpt: post.excerpt,
         featured_image_url: post.featured_image_url,
+        seo_keywords: post.seo_keywords,
+        seo_description: post.seo_description,
       }),
     });
 
