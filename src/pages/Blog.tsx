@@ -62,6 +62,7 @@ export default function Blog() {
   const [seoDescription, setSeoDescription] = useState("");
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [generatingAI, setGeneratingAI] = useState(false);
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
@@ -184,6 +185,29 @@ export default function Blog() {
     }
   };
 
+  const generateArticleWithAI = async () => {
+    if (!title) {
+      alert("Digite um título primeiro");
+      return;
+    }
+
+    setGeneratingAI(true);
+
+    const { data, error } = await supabase.functions.invoke("blog_ai_article", {
+      body: { title },
+    });
+
+    if (error) {
+      console.error(error);
+      alert("Erro ao gerar artigo");
+      setGeneratingAI(false);
+      return;
+    }
+
+    setContent(data.article);
+    setGeneratingAI(false);
+  };
+
   return (
     <AppLayout>
       <div className="space-y-8">
@@ -274,6 +298,14 @@ export default function Blog() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Conteúdo</label>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={generateArticleWithAI}
+                disabled={generatingAI}
+              >
+                {generatingAI ? "Gerando artigo..." : "✨ Gerar artigo com IA"}
+              </Button>
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
