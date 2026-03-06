@@ -296,6 +296,16 @@ export default function Blog() {
             </div>
 
             <div className="space-y-2">
+              <label className="block text-sm font-medium mb-1">Resumo do artigo (Excerpt)</label>
+              <textarea
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+                className="w-full border rounded p-2"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Conteúdo</label>
               <Button
                 type="button"
