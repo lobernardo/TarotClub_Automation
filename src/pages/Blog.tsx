@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FileText, Upload, ExternalLink, RefreshCw, Save, Send, Loader2 } from "lucide-react";
+import { FileText, Upload, ExternalLink, RefreshCw, Save, Send, Loader2, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -38,8 +38,19 @@ function generateSlug(title: string) {
     .replace(/-+/g, "-");
 }
 
+type BlogFormPost = {
+  id: string;
+  title: string;
+  slug: string | null;
+  excerpt: string | null;
+  content: string;
+  featured_image_url: string | null;
+  seo_keywords?: string | null;
+  seo_description?: string | null;
+};
+
 export default function Blog() {
-  const { postsQuery, createPost, publishPost } = useBlogPosts();
+  const { postsQuery, createPost, publishPost, updatePost, updatePostMutation } = useBlogPosts();
   const { toast } = useToast();
 
   const [title, setTitle] = useState("");
@@ -47,6 +58,9 @@ export default function Blog() {
   const [excerpt, setExcerpt] = useState("");
   const [content, setContent] = useState("");
   const [featuredImageUrl, setFeaturedImageUrl] = useState("");
+  const [seoKeywords, setSeoKeywords] = useState("");
+  const [seoDescription, setSeoDescription] = useState("");
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const handleTitleChange = (value: string) => {
@@ -60,6 +74,20 @@ export default function Blog() {
     setExcerpt("");
     setContent("");
     setFeaturedImageUrl("");
+    setSeoKeywords("");
+    setSeoDescription("");
+    setEditingPostId(null);
+  };
+
+  const fillFormForEditing = (post: BlogFormPost) => {
+    setEditingPostId(post.id);
+    setTitle(post.title ?? "");
+    setSlug(post.slug ?? "");
+    setExcerpt(post.excerpt ?? "");
+    setContent(post.content ?? "");
+    setFeaturedImageUrl(post.featured_image_url ?? "");
+    setSeoKeywords(post.seo_keywords ?? "");
+    setSeoDescription(post.seo_description ?? "");
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,21 +109,35 @@ export default function Blog() {
     }
   };
 
+  const getPostPayload = () => ({
+    title,
+    slug: slug || null,
+    excerpt: excerpt || null,
+    content,
+    featured_image_url: featuredImageUrl || null,
+    seo_keywords: seoKeywords || null,
+    seo_description: seoDescription || null,
+  });
+
   const handleSaveDraft = async () => {
     if (!title || !content) {
       toast({ title: "Título e conteúdo são obrigatórios", variant: "destructive" });
       return;
     }
+
+    const payload = {
+      ...getPostPayload(),
+      status: "draft" as const,
+    };
+
     try {
-      await createPost.mutateAsync({
-        title,
-        slug: slug || null,
-        excerpt: excerpt || null,
-        content,
-        featured_image_url: featuredImageUrl || null,
-        status: "draft",
-      });
-      toast({ title: "Rascunho salvo!" });
+      if (editingPostId) {
+        await updatePost(editingPostId, payload);
+        toast({ title: "Rascunho atualizado!" });
+      } else {
+        await createPost.mutateAsync(payload);
+        toast({ title: "Rascunho salvo!" });
+      }
       resetForm();
     } catch (err: any) {
       toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
@@ -107,16 +149,25 @@ export default function Blog() {
       toast({ title: "Título e conteúdo são obrigatórios", variant: "destructive" });
       return;
     }
+
     try {
-      const post = await createPost.mutateAsync({
-        title,
-        slug: slug || null,
-        excerpt: excerpt || null,
-        content,
-        featured_image_url: featuredImageUrl || null,
-        status: "draft",
-      });
-      await publishPost.mutateAsync(post.id);
+      let postId = editingPostId;
+
+      if (editingPostId) {
+        const updatedPost = await updatePost(editingPostId, {
+          ...getPostPayload(),
+          status: "draft",
+        });
+        postId = updatedPost.id;
+      } else {
+        const post = await createPost.mutateAsync({
+          ...getPostPayload(),
+          status: "draft",
+        });
+        postId = post.id;
+      }
+
+      await publishPost.mutateAsync(postId);
       toast({ title: "Post enviado para publicação!" });
       resetForm();
     } catch (err: any) {
@@ -148,7 +199,7 @@ export default function Blog() {
         {/* Create Post */}
         <Card className="glass-card">
           <CardHeader>
-            <CardTitle>Criar novo post</CardTitle>
+            <CardTitle>{editingPostId ? "Editar rascunho" : "Criar novo post"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -165,6 +216,21 @@ export default function Blog() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Resumo</label>
               <Input value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="Resumo curto do post" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Palavras-chave SEO</label>
+              <Input value={seoKeywords} onChange={(e) => setSeoKeywords(e.target.value)} placeholder="tarot, espiritualidade" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Descrição SEO</label>
+              <Textarea
+                value={seoDescription}
+                onChange={(e) => setSeoDescription(e.target.value)}
+                placeholder="Descrição para mecanismos de busca"
+                className="min-h-[100px]"
+              />
             </div>
 
             <div className="space-y-2">
@@ -196,7 +262,7 @@ export default function Blog() {
                     />
                     <button
                       type="button"
-                      onClick={() => setFeaturedImageUrl(null)}
+                      onClick={() => setFeaturedImageUrl("")}
                       className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center"
                     >
                       ×
@@ -210,18 +276,23 @@ export default function Blog() {
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}
-                disabled={createPost.isPending}
+                disabled={createPost.isPending || updatePostMutation.isPending}
               >
                 <Save className="h-4 w-4 mr-2" />
-                Salvar rascunho
+                {editingPostId ? "Atualizar rascunho" : "Salvar rascunho"}
               </Button>
               <Button
                 onClick={handlePublish}
-                disabled={createPost.isPending || publishPost.isPending}
+                disabled={createPost.isPending || updatePostMutation.isPending || publishPost.isPending}
               >
                 <Send className="h-4 w-4 mr-2" />
                 Publicar no Blog
               </Button>
+              {editingPostId && (
+                <Button variant="ghost" onClick={resetForm}>
+                  Cancelar edição
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -245,7 +316,7 @@ export default function Blog() {
                     <TableHead>Título</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Criado em</TableHead>
-                    <TableHead>Link WordPress</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -261,17 +332,28 @@ export default function Blog() {
                         {format(new Date(post.created_at), "dd MMM yyyy HH:mm", { locale: ptBR })}
                       </TableCell>
                       <TableCell>
-                        {post.status === "published" && post.wp_post_url ? (
-                          <a href={post.wp_post_url} target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" size="sm">
-                              <ExternalLink className="h-4 w-4 mr-1" /> Abrir no site
+                        <div className="flex items-center gap-2">
+                          {post.status === "draft" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fillFormForEditing(post as BlogFormPost)}
+                            >
+                              <Pencil className="h-4 w-4 mr-1" /> Editar
                             </Button>
-                          </a>
-                        ) : post.status === "failed" ? (
-                          <Button variant="outline" size="sm" onClick={() => handleRetry(post.id)}>
-                            <RefreshCw className="h-4 w-4 mr-1" /> Tentar novamente
-                          </Button>
-                        ) : null}
+                          )}
+                          {post.status === "published" && post.wp_post_url ? (
+                            <a href={post.wp_post_url} target="_blank" rel="noopener noreferrer">
+                              <Button variant="outline" size="sm">
+                                <ExternalLink className="h-4 w-4 mr-1" /> Abrir no site
+                              </Button>
+                            </a>
+                          ) : post.status === "failed" ? (
+                            <Button variant="outline" size="sm" onClick={() => handleRetry(post.id)}>
+                              <RefreshCw className="h-4 w-4 mr-1" /> Tentar novamente
+                            </Button>
+                          ) : null}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

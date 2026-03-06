@@ -3,6 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 export type BlogPost = Tables<"blog_posts">;
+type BlogPostPayload = TablesInsert<"blog_posts"> & {
+  seo_keywords?: string | null;
+  seo_description?: string | null;
+};
+type BlogPostUpdatePayload = TablesUpdate<"blog_posts"> & {
+  seo_keywords?: string | null;
+  seo_description?: string | null;
+};
 
 export function useBlogPosts() {
   const queryClient = useQueryClient();
@@ -20,10 +28,10 @@ export function useBlogPosts() {
   });
 
   const createPost = useMutation({
-    mutationFn: async (post: TablesInsert<"blog_posts">) => {
+    mutationFn: async (post: BlogPostPayload) => {
       const { data, error } = await supabase
         .from("blog_posts")
-        .insert(post)
+        .insert(post as TablesInsert<"blog_posts">)
         .select()
         .single();
       if (error) throw error;
@@ -32,11 +40,11 @@ export function useBlogPosts() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["blog_posts"] }),
   });
 
-  const updatePost = useMutation({
-    mutationFn: async ({ id, ...updates }: TablesUpdate<"blog_posts"> & { id: string }) => {
+  const updatePostMutation = useMutation({
+    mutationFn: async ({ id, data: updateData }: { id: string; data: BlogPostUpdatePayload }) => {
       const { data, error } = await supabase
         .from("blog_posts")
-        .update(updates)
+        .update(updateData as TablesUpdate<"blog_posts">)
         .eq("id", id)
         .select()
         .single();
@@ -45,6 +53,9 @@ export function useBlogPosts() {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["blog_posts"] }),
   });
+
+  const updatePost = (id: string, data: BlogPostUpdatePayload) =>
+    updatePostMutation.mutateAsync({ id, data });
 
   const publishPost = useMutation({
     mutationFn: async (blog_post_id: string) => {
@@ -57,5 +68,5 @@ export function useBlogPosts() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["blog_posts"] }),
   });
 
-  return { postsQuery, createPost, updatePost, publishPost };
+  return { postsQuery, createPost, updatePost, publishPost, updatePostMutation };
 }
