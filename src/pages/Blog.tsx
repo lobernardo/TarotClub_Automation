@@ -202,6 +202,8 @@ export default function Blog() {
             <CardTitle>{editingPostId ? "Editar rascunho" : "Criar novo post"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/** Campos automáticos por IA */}
+            {/** Mantidos no formulário apenas como leitura */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Título</label>
@@ -214,23 +216,60 @@ export default function Blog() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Resumo</label>
-              <Input value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="Resumo curto do post" />
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                Resumo
+                <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
+                  IA
+                </Badge>
+              </label>
+              <Input
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+                placeholder="Campo gerado automaticamente por IA"
+                disabled
+                className="bg-muted text-muted-foreground cursor-not-allowed disabled:opacity-100"
+              />
+              <p className="text-xs text-muted-foreground">
+                Este campo é gerado automaticamente por IA durante a publicação do artigo.
+              </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Palavras-chave SEO</label>
-              <Input value={seoKeywords} onChange={(e) => setSeoKeywords(e.target.value)} placeholder="tarot, espiritualidade" />
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                Palavras-chave SEO
+                <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
+                  IA
+                </Badge>
+              </label>
+              <Input
+                value={seoKeywords}
+                onChange={(e) => setSeoKeywords(e.target.value)}
+                placeholder="Campo gerado automaticamente por IA"
+                disabled
+                className="bg-muted text-muted-foreground cursor-not-allowed disabled:opacity-100"
+              />
+              <p className="text-xs text-muted-foreground">
+                Este campo é gerado automaticamente por IA durante a publicação do artigo.
+              </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Descrição SEO</label>
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                Descrição SEO
+                <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
+                  IA
+                </Badge>
+              </label>
               <Textarea
                 value={seoDescription}
                 onChange={(e) => setSeoDescription(e.target.value)}
-                placeholder="Descrição para mecanismos de busca"
-                className="min-h-[100px]"
+                placeholder="Campo gerado automaticamente por IA"
+                disabled
+                className="min-h-[100px] bg-muted text-muted-foreground cursor-not-allowed disabled:opacity-100"
               />
+              <p className="text-xs text-muted-foreground">
+                Este campo é gerado automaticamente por IA durante a publicação do artigo.
+              </p>
             </div>
 
             <div className="space-y-2">
